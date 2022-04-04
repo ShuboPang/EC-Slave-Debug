@@ -25,6 +25,7 @@ include("vendor/soem/soem.pri")
 include("vendor/wpcap/wpcap.pri")
 include("vendor/osal/osal.pri")
 include("vendor/oshw/oshw.pri")
+include("data/data.pri")
 
 
 

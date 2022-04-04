@@ -39,6 +39,12 @@ public:
     Q_INVOKABLE quint32 getSlaveCount();
 
     ///
+    /// \brief getSlaveNameList
+    /// \return
+    ///
+    Q_INVOKABLE QStringList getSlaveNameList();
+
+    ///
     /// \brief getSlaveState    获取从站状态
     /// \param slave
     /// \return

@@ -60,6 +60,7 @@ Rectangle {
             height: 25
             border.color: input.focus?"#1E90FF":"black"
             border.width: input.focus?2:1
+            color: root.enable?"transparent":"gray"
             //anchors.verticalCenter: parent.verticalCenter
             clip:true
 //            color: root.editing?"lime":"transparent"
@@ -74,6 +75,7 @@ Rectangle {
                 font.pointSize: 12
                 selectByMouse:true
                 validator:isNumber?doubleInput:null
+                color: root.enable?"transparent":"gray"
                 onEditingFinished: {
                     editFinish();
                     if (labelText != "") {

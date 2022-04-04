@@ -4,6 +4,7 @@
 #include <QLocale>
 #include <QTranslator>
 #include <QQmlContext>
+#include <QFont>
 
 #include "scanhardware/scanhardware.h"
 #include "ethercatmaster/ethercatmaster.h"
@@ -28,7 +29,9 @@ int main(int argc, char *argv[])
     setbuf(stdout, NULL);
     QQmlApplicationEngine engine;
     EthercatMaster ethercatmaster;
-
+    QFont font = app.font();
+    font.setPixelSize(20);
+    app.setFont(font);
     const QUrl url(QStringLiteral("qrc:/main.qml"));
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,
                      &app, [url](QObject *obj, const QUrl &objUrl) {

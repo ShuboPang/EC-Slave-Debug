@@ -14,6 +14,7 @@ RC_ICONS ="image/a94yr-ptzij-001.ico"
 
 DEFINES+=EC_VER1
 DEFINES+=__STDC_LIMIT_MACROS
+DEFINES+=SLAVE_TEST
 
 SOURCES += \
         main.cpp

@@ -64,8 +64,21 @@ qint32 EthercatMaster::init(quint32 network_id){
     }
     return -2;
 }
+QStringList EthercatMaster::getSlaveNameList(){
+    QStringList str;
+    quint32 count = getSlaveCount();
+    for(quint32 i =0;i<count;i++){
+        ec_slavet* slave = &ec_slave[i+1];
+        str.append(QString::number(i)+":"+slave->name);
+    }
+    return str;
+}
 
 quint32 EthercatMaster::getSlaveCount(){
+
+#ifdef SLAVE_TEST
+    return 8;
+#endif
     return ec_slavecount;
 }
 
@@ -76,6 +89,16 @@ quint32 EthercatMaster::getSlaveState(quint32 slave_id){
 QString EthercatMaster::getSlaveInfo(quint32 slave_id){
     QJsonObject info;
     ec_slavet* slave = &ec_slave[slave_id+1];
+
+#ifdef SLAVE_TEST
+    slave->configadr = 4097+slave_id;
+    slave->state = 0x02;
+    slave->aliasadr = slave_id;
+    slave->eep_man  = 0x092b;
+    slave->eep_id = 0x501;
+    sprintf(slave->name,"%s","Ethercat Device");
+#endif
+
     info.insert("ec_state",slave->state);
     info.insert("ALstatuscode",slave->ALstatuscode);
     info.insert("configadr",slave->configadr);

@@ -77,6 +77,7 @@ Rectangle {
             height: root.height
             border.color: input.focus?"#1E90FF":"black"
             border.width: input.focus?2:1
+            color: root.enabled?"transparent":"gray"
             clip:true
             TextInput {//TextInput
                 id:input
@@ -96,6 +97,7 @@ Rectangle {
                 selectionColor: "#007ACC"
                 selectByMouse:true
                 validator:isHex?hex:isNumber?doubleInput:null
+                color: root.enabled?"transparent":"gray"
                 onEditingFinished: {
                     configValueEditFinshed();
                 }

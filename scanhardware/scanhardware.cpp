@@ -27,3 +27,10 @@ QStringList ScanHardware::ScanNetworkCard(){
     qDebug("ScanNetworkCard!");
     return network_card_list;
 }
+
+QString ScanHardware::GetNetworkName(quint32 index){
+    if(index >= network_card_name_list.size()){
+        return QString();
+    }
+    return network_card_name_list.at(index);
+}

@@ -1,4 +1,6 @@
 QT += quick
+QT += widgets
+QT += core
 
 CONFIG += c++11
 
@@ -17,7 +19,7 @@ CONFIG += lrelease
 CONFIG += embed_translations
 
 
-
+include("ethercatmaster/ethercatmaster.pri")
 include("scanhardware/scanhardware.pri")
 include("vendor/soem/soem.pri")
 include("vendor/wpcap/wpcap.pri")

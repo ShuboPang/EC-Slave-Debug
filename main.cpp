@@ -3,8 +3,10 @@
 
 #include <QLocale>
 #include <QTranslator>
+#include <QQmlContext>
 
 #include "scanhardware/scanhardware.h"
+#include "ethercatmaster/ethercatmaster.h"
 
 int main(int argc, char *argv[])
 {
@@ -25,15 +27,16 @@ int main(int argc, char *argv[])
     }
 
     QQmlApplicationEngine engine;
+    EthercatMaster ethercatmaster;
+
     const QUrl url(QStringLiteral("qrc:/main.qml"));
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,
                      &app, [url](QObject *obj, const QUrl &objUrl) {
         if (!obj && url == objUrl)
             QCoreApplication::exit(-1);
     }, Qt::QueuedConnection);
+    engine.rootContext()->setContextProperty("ethercatmaster", &ethercatmaster);
     engine.load(url);
-
-    ScanHardware::ScanNetworkCard();
 
     return app.exec();
 }

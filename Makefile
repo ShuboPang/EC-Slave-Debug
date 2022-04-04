@@ -242,6 +242,7 @@ Makefile: EC-Slave-Debug.pro D:\Qt\Qt5.12.11\5.12.11\msvc2015_64\mkspecs\win32-m
 		D:\Qt\Qt5.12.11\5.12.11\msvc2015_64\mkspecs\features\toolchain.prf \
 		D:\Qt\Qt5.12.11\5.12.11\msvc2015_64\mkspecs\features\default_pre.prf \
 		D:\Qt\Qt5.12.11\5.12.11\msvc2015_64\mkspecs\features\win32\default_pre.prf \
+		ethercatmaster\ethercatmaster.pri \
 		scanhardware\scanhardware.pri \
 		vendor\soem\soem.pri \
 		vendor\wpcap\wpcap.pri \
@@ -258,6 +259,7 @@ Makefile: EC-Slave-Debug.pro D:\Qt\Qt5.12.11\5.12.11\msvc2015_64\mkspecs\win32-m
 		D:\Qt\Qt5.12.11\5.12.11\msvc2015_64\mkspecs\features\resources.prf \
 		D:\Qt\Qt5.12.11\5.12.11\msvc2015_64\mkspecs\features\moc.prf \
 		D:\Qt\Qt5.12.11\5.12.11\msvc2015_64\mkspecs\features\win32\opengl.prf \
+		D:\Qt\Qt5.12.11\5.12.11\msvc2015_64\mkspecs\features\uic.prf \
 		D:\Qt\Qt5.12.11\5.12.11\msvc2015_64\mkspecs\features\qmake_use.prf \
 		D:\Qt\Qt5.12.11\5.12.11\msvc2015_64\mkspecs\features\file_copies.prf \
 		D:\Qt\Qt5.12.11\5.12.11\msvc2015_64\mkspecs\features\win32\windows.prf \
@@ -267,6 +269,7 @@ Makefile: EC-Slave-Debug.pro D:\Qt\Qt5.12.11\5.12.11\msvc2015_64\mkspecs\win32-m
 		D:\Qt\Qt5.12.11\5.12.11\msvc2015_64\mkspecs\features\lex.prf \
 		EC-Slave-Debug.pro \
 		D:\Qt\Qt5.12.11\5.12.11\msvc2015_64\lib\Qt5Quick.prl \
+		D:\Qt\Qt5.12.11\5.12.11\msvc2015_64\lib\Qt5Widgets.prl \
 		D:\Qt\Qt5.12.11\5.12.11\msvc2015_64\lib\Qt5Gui.prl \
 		D:\Qt\Qt5.12.11\5.12.11\msvc2015_64\lib\Qt5Qml.prl \
 		D:\Qt\Qt5.12.11\5.12.11\msvc2015_64\lib\Qt5Network.prl \
@@ -438,6 +441,7 @@ D:\Qt\Qt5.12.11\5.12.11\msvc2015_64\mkspecs\common\msvc-version.conf:
 D:\Qt\Qt5.12.11\5.12.11\msvc2015_64\mkspecs\features\toolchain.prf:
 D:\Qt\Qt5.12.11\5.12.11\msvc2015_64\mkspecs\features\default_pre.prf:
 D:\Qt\Qt5.12.11\5.12.11\msvc2015_64\mkspecs\features\win32\default_pre.prf:
+ethercatmaster\ethercatmaster.pri:
 scanhardware\scanhardware.pri:
 vendor\soem\soem.pri:
 vendor\wpcap\wpcap.pri:
@@ -454,6 +458,7 @@ D:\Qt\Qt5.12.11\5.12.11\msvc2015_64\mkspecs\features\qt.prf:
 D:\Qt\Qt5.12.11\5.12.11\msvc2015_64\mkspecs\features\resources.prf:
 D:\Qt\Qt5.12.11\5.12.11\msvc2015_64\mkspecs\features\moc.prf:
 D:\Qt\Qt5.12.11\5.12.11\msvc2015_64\mkspecs\features\win32\opengl.prf:
+D:\Qt\Qt5.12.11\5.12.11\msvc2015_64\mkspecs\features\uic.prf:
 D:\Qt\Qt5.12.11\5.12.11\msvc2015_64\mkspecs\features\qmake_use.prf:
 D:\Qt\Qt5.12.11\5.12.11\msvc2015_64\mkspecs\features\file_copies.prf:
 D:\Qt\Qt5.12.11\5.12.11\msvc2015_64\mkspecs\features\win32\windows.prf:
@@ -463,6 +468,7 @@ D:\Qt\Qt5.12.11\5.12.11\msvc2015_64\mkspecs\features\yacc.prf:
 D:\Qt\Qt5.12.11\5.12.11\msvc2015_64\mkspecs\features\lex.prf:
 EC-Slave-Debug.pro:
 D:\Qt\Qt5.12.11\5.12.11\msvc2015_64\lib\Qt5Quick.prl:
+D:\Qt\Qt5.12.11\5.12.11\msvc2015_64\lib\Qt5Widgets.prl:
 D:\Qt\Qt5.12.11\5.12.11\msvc2015_64\lib\Qt5Gui.prl:
 D:\Qt\Qt5.12.11\5.12.11\msvc2015_64\lib\Qt5Qml.prl:
 D:\Qt\Qt5.12.11\5.12.11\msvc2015_64\lib\Qt5Network.prl:

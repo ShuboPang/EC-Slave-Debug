@@ -1,5 +1,22 @@
 <RCC>
     <qresource prefix="/">
         <file>main.qml</file>
+        <file>EthercatInfo.js</file>
+        <file>base/DraggableItem.qml</file>
+        <file>base/DraggableItemDropArea.qml</file>
+        <file>base/ICButton.qml</file>
+        <file>base/ICCalendar.qml</file>
+        <file>base/ICCheckBox.qml</file>
+        <file>base/ICCombox.qml</file>
+        <file>base/ICEditBox.qml</file>
+        <file>base/ICImageButton.qml</file>
+        <file>base/ICIOComboBox.qml</file>
+        <file>base/ICItem.qml</file>
+        <file>base/ICLineEdit.qml</file>
+        <file>base/ICListTip.qml</file>
+        <file>base/ICSingleIoState.qml</file>
+        <file>base/ICSwitch.qml</file>
+        <file>base/ICTreeView.qml</file>
+        <file>base/MouseRightMenu.qml</file>
     </qresource>
 </RCC>

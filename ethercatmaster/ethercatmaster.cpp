@@ -76,7 +76,7 @@ quint32 EthercatMaster::getSlaveState(quint32 slave_id){
 QString EthercatMaster::getSlaveInfo(quint32 slave_id){
     QJsonObject info;
     ec_slavet* slave = &ec_slave[slave_id];
-    info.insert("state",slave->state);
+    info.insert("ec_state",slave->state);
     info.insert("ALstatuscode",slave->ALstatuscode);
     info.insert("configadr",slave->configadr);
     info.insert("aliasadr",slave->aliasadr);
@@ -89,4 +89,50 @@ QString EthercatMaster::getSlaveInfo(quint32 slave_id){
     info.insert("Obytes",(int)slave->Obytes);
     info.insert("name",slave->name);
     return QString(QJsonDocument(info).toJson());
+}
+
+qint32 EthercatMaster::readSdo(quint32 slave_id,quint32 main_index,quint32 sub_index,quint32 size){
+    if(size == 0){
+        size = 1;
+    }
+    int32 rdl = size;
+    int8_t u8 = 0;
+    int16_t u16 = 0;
+    int32_t u32 = 0;
+    if(size == 1){
+        ec_SDOread(slave_id, main_index, sub_index, FALSE, &rdl, &u8, EC_TIMEOUTRXM);
+        return u8;
+    }
+    else if(size == 1){
+        ec_SDOread(slave_id, main_index, sub_index, FALSE, &rdl, &u16, EC_TIMEOUTRXM);
+        return u16;
+    }
+    else if(size == 1){
+        ec_SDOread(slave_id, main_index, sub_index, FALSE, &rdl, &u32, EC_TIMEOUTRXM);
+        return u32;
+    }
+    return 0;
+}
+
+qint32 EthercatMaster::writeSdo(quint32 slave_id,quint32 main_index,quint32 sub_index,quint32 size,qint32 value){
+    if(size == 0){
+        size = 1;
+    }
+    int32 rdl = size;
+    int8_t u8 = value;
+    int16_t u16 = value;
+    int32_t u32 = value;
+    if(size == 1){
+        ec_SDOwrite(slave_id, main_index, sub_index, FALSE, rdl, &u8, EC_TIMEOUTRXM);
+        return u8;
+    }
+    else if(size == 1){
+        ec_SDOwrite(slave_id, main_index, sub_index, FALSE, rdl, &u16, EC_TIMEOUTRXM);
+        return u16;
+    }
+    else if(size == 1){
+        ec_SDOwrite(slave_id, main_index, sub_index, FALSE, rdl, &u32, EC_TIMEOUTRXM);
+        return u32;
+    }
+    return 0;
 }

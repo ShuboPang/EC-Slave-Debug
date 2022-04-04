@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QStringList>
 
+#include "ethercattype.h"
 #include "ethercatmain.h"
 #include "ethercatconfig.h"
 #include "ethercatdc.h"
@@ -50,6 +51,28 @@ public:
     /// \return
     ///
     Q_INVOKABLE QString getSlaveInfo(quint32 slave_id);
+
+
+    ///
+    /// \brief readSdo
+    /// \param slave_id
+    /// \param main_index
+    /// \param sub_index
+    /// \param size
+    /// \return
+    ///
+    Q_INVOKABLE qint32 readSdo(quint32 slave_id,quint32 main_index,quint32 sub_index,quint32 size);
+
+    ///
+    /// \brief writeSdo
+    /// \param slave_id
+    /// \param main_index
+    /// \param sub_index
+    /// \param size
+    /// \param value
+    /// \return
+    ///
+    Q_INVOKABLE qint32 writeSdo(quint32 slave_id,quint32 main_index,quint32 sub_index,quint32 size,qint32 value);
 
 private:
     char IOmap[4096];

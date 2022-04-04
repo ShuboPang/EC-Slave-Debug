@@ -3,17 +3,88 @@ import QtQuick.Window 2.12
 import QtQml 2.0
 import QtQuick.Controls 2.0
 import QtQuick.Controls 2.5
+import"./base"
+import "EthercatInfo.js" as EthercatInfoJs
 
-Window {
+ApplicationWindow {
     width: 1280
     height:768
     visible: true
     title: qsTr("EC-Slave-Debug")
+    menuBar: MenuBar{
+            Menu {
+                 title: qsTr("&文件")
+                 Action {
+                     text: qsTr("&新建...")
+                     shortcut : "Ctrl+N"
+                     onTriggered: {
+                        console.log("File New")
+                     }
 
+                 }
+                 Action { text: qsTr("&打开...") }
+                 Action { text: qsTr("&保存") }
+                 Action { text: qsTr("另存为...") }
+                 MenuSeparator { }
+                 Action {
+                     text: qsTr("&退出")
+                     shortcut: "QKeySequence::Quit"
+                     onTriggered: {
+
+                     }
+                 }
+             }
+            Menu {
+                 title: qsTr("&脚本")
+                 Action {
+                     text: qsTr("&开始录制脚本...")
+
+                 }
+                 Action {
+                     text: qsTr("&结束录制脚本...")
+                 }
+                 MenuSeparator { }
+                 Action {
+                     text: qsTr("&执行脚本...")
+                 }
+            }
+            Menu {
+                 title: qsTr("&设置")
+                 Action {
+                     text: qsTr("&配置网卡...")
+
+                 }
+                 Action {
+                     text: qsTr("&语言...")
+                 }
+            }
+            Menu {
+                 title: qsTr("&帮助")
+                 Action {
+                     text: qsTr("&使用说明...")
+
+                 }
+                 Action {
+                     text: qsTr("&伺服说明书...")
+                 }
+            }
+            Menu {
+                 title: qsTr("&关于")
+                 Action {
+                     text: qsTr("&关于...")
+                     onTriggered: {
+                     }
+
+                 }
+             }
+        }
 
     Row{
         id:topHeader
         spacing: 10
+        y:10
+        x:10
+
         ComboBox{
             id:networkList
             width: 300
@@ -24,6 +95,7 @@ Window {
                 if(networkList.currentIndex == -1){
                     return;
                 }
+
                 let ret = ethercatmaster.init(networkList.currentIndex)
                 console.log("ethercat master init ret = ",ret);
                 if(ret == 0){
@@ -49,54 +121,67 @@ Window {
         }
         CheckBox{
             text: qsTr("自动刷新")
+            visible: false
             Timer{
                 interval: 100
-                running: parent.checked
+                running: true
                 repeat: true;
                 onTriggered: {
-                    slaveDeviceList.refreshSlaveState()
+                    for(let i = 0;i<ethercatmaster.getSlaveCount();i++){
+//                    for(let i = 0;i<8;i++){
+                        var info = ethercatmaster.getSlaveInfo(i);
+                        slaveDeviceListModel.setProperty(i,"ec_state",JSON.parse(info).ec_state)
+//                        console.log("refreshSlaveState",i,info)
+                    }
                 }
             }
         }
     }
-    ListModel{
-        id:slaveDeviceListModel
-    }
+
     Rectangle{
+        id:slaveDeviceListPage
         height: 600
-        width: 1000
+        width: 570
         anchors.top: topHeader.bottom
         anchors.topMargin: 10
+        anchors.left: topHeader.left
 
         border.color: "gray"
         border.width: 1
 
         ListView{
             id:slaveDeviceList
-            model: slaveDeviceListModel
+            model: ListModel{
+                id:slaveDeviceListModel
+            }
             width: parent.width
             height: parent.height
 
+            clip: true
+
             function refreshSlaveState(){
+                 slaveDeviceListModel.clear()
                 for(let i = 0;i<ethercatmaster.getSlaveCount();i++){
+//                for(let i = 0;i<8;i++){
                     var info = ethercatmaster.getSlaveInfo(i);
-                    slaveDeviceListModel.append(JSON.parse(info))
-                    console.log(info)
+                    var slaveInfo = JSON.parse(info);
+                    slaveDeviceListModel.append(slaveInfoS)
+                    console.log("refreshSlaveState",i,info)
                 }
             }
 
-            delegate: Rectangle{
+            header:Rectangle{
                 width: parent.width
                 height: 30
                 border.color: "black"
                 border.width: 1
-                color: slaveDeviceList.currentIndex == index?"lime":"white"
                 Row{
                     spacing: 3
                     height: parent.height
                     Text {
-                        text: name
+                        text: qsTr("从站名字")
                         anchors.verticalCenter: parent.verticalCenter
+                        horizontalAlignment: Text.AlignHCenter
                         width: 200
                     }
                     Rectangle{
@@ -105,9 +190,10 @@ Window {
                         color: "black"
                     }
                     Text {
-                        text: eep_id
+                        text: qsTr("厂家ID")
                         anchors.verticalCenter: parent.verticalCenter
-                        width: 150
+                        horizontalAlignment: Text.AlignHCenter
+                        width: 100
                     }
                     Rectangle{
                         width: 1
@@ -115,9 +201,10 @@ Window {
                         color: "black"
                     }
                     Text {
-                        text: eep_man
+                        text: qsTr("产品ID")
                         anchors.verticalCenter: parent.verticalCenter
-                        width: 150
+                        horizontalAlignment: Text.AlignHCenter
+                        width: 100
                     }
                     Rectangle{
                         width: 1
@@ -125,20 +212,158 @@ Window {
                         color: "black"
                     }
                     Text {
-                        text: state
+                        text: qsTr("从站状态")
                         anchors.verticalCenter: parent.verticalCenter
+                        horizontalAlignment: Text.AlignHCenter
+                        width: 150
+                    }
+                }
+            }
+            delegate: Rectangle{
+                width: parent.width
+                height: 30
+                border.color: "black"
+                border.width: 1
+                color: slaveDeviceList.currentIndex == index?"gray":"white"
+                Row{
+                    spacing: 3
+                    height: parent.height
+                    Text {
+                        text: name
+                        anchors.verticalCenter: parent.verticalCenter
+
+                        width: 200
+                    }
+                    Rectangle{
+                        width: 1
+                        height: parent.height
+                        color: "black"
+                    }
+                    Text {
+                        text: "0x"+parseInt(eep_id)
+                        anchors.verticalCenter: parent.verticalCenter
+                        horizontalAlignment: Text.AlignRight
+                        width: 100
+                    }
+                    Rectangle{
+                        width: 1
+                        height: parent.height
+                        color: "black"
+                    }
+                    Text {
+                        text: "0x"+parseInt(eep_man,16)
+                        anchors.verticalCenter: parent.verticalCenter
+                        horizontalAlignment: Text.AlignRight
+                        width: 100
+                    }
+                    Rectangle{
+                        width: 1
+                        height: parent.height
+                        color: "black"
+                    }
+                    Text {
+                        text: "0x"+parseInt(ec_state,16)+"("+EthercatInfoJs.__EthercatSlaveStateEnum[ec_state]+")"
+                        anchors.verticalCenter: parent.verticalCenter
+                        horizontalAlignment: Text.AlignHCenter
                         width: 150
                     }
                 }
                 MouseArea{
                     anchors.fill:parent
+
+                    acceptedButtons: Qt.LeftButton|Qt.RightButton
+
                     onClicked: {
                         slaveDeviceList.currentIndex = index;
+                        if(mouse.button == Qt.RightButton){
+                            option_menu.popup()
+                        }
+                    }
+
+                    Menu{
+                        id:option_menu
+                        MenuItem{
+                            text: qsTr("详细信息")
+
+                        }
+                        MenuItem{
+                            text: qsTr("SDO")
+                            onTriggered: {
+                                sdoPage.visible = true
+                            }
+                        }
                     }
                 }
             }
         }
     }
+    Column{
+        spacing: 10
+        x:10
+        y:10
+        anchors.top: topHeader.bottom
+        anchors.topMargin: 10
+        anchors.left:slaveDeviceListPage.right
+        anchors.leftMargin: 10
+        Row{
+            spacing: 10
+            ICLineEdit{
+                id:mainIndex
+                configName:qsTr("主索引")
+                isHex: true
+                height: datatype.height
+            }
+            ICLineEdit{
+                id:subIndex
+                configName:qsTr("子索引")
+                isHex: true
+                height: datatype.height
+            }
+            ComboBox{
+                id:datatype
+                model: [qsTr("NULL"),qsTr("int8"),qsTr("int16"),qsTr("int32")]
+                currentIndex: 1
+                onVisibleChanged: {
+                    if(visible){
+                        model = EthercatInfoJs.__EthercatSlaveNameList;
+                    }
+                }
+            }
+        }
+        Row{
+            spacing: 10
+            anchors.right: parent.right
+            ICLineEdit{
+                id:readvalue
+                configName:qsTr("值")
+                isHex: true
+                height: datatype.height
+                enabled: false
+            }
+            Button{
+                text: qsTr("读")
+                onClicked: {
+                    if(slaveDeviceList.currentIndex == -1){
+                        return
+                    }
+                    readvalue.configValue = ethercatmaster.readSdo(slaveDeviceList.currentIndex,mainIndex.intConfigValue(),subIndex.intConfigValue(),datatype.currentIndex)
+                }
+            }
+       }
+       Row{
+           spacing: 10
+           anchors.right: parent.right
+            ICLineEdit{
+                configName:qsTr("值")
+                isHex: true
+                height: datatype.height
+            }
+            Button{
+                text: qsTr("写")
+            }
+        }
+    }
+
     Dialog{
         id:dialog
         anchors.centerIn: parent

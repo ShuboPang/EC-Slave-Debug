@@ -5,9 +5,6 @@
 #include <QJsonObject>
 #include <QJsonDocument>
 
-extern boolean EcatError;
-
-
 EthercatMaster::EthercatMaster()
 {
 
@@ -24,6 +21,7 @@ QStringList EthercatMaster::scanNetwork(){
 /// \return     0：正常  -1：网卡不存在  -2：无法初始化网卡 -3：没有找到从站设备
 ///
 qint32 EthercatMaster::init(quint32 network_id){
+    ec_close();
     QString name = ScanHardware::GetNetworkName(network_id);
     if(!name.size()){
         return -1;
@@ -33,7 +31,8 @@ qint32 EthercatMaster::init(quint32 network_id){
     qint32 ret = ec_init(str);
     if(ret){
         qDebug("ec_init %s",str);
-        if(ec_config(false, &IOmap) > 0){
+        if(ec_config_init(false) > 0){
+             ec_config_map(&IOmap);
             qDebug("find and auto-config slaves");
             ec_configdc();
             while(EcatError) qDebug("%s", ec_elist2string());
@@ -55,6 +54,7 @@ qint32 EthercatMaster::init(quint32 network_id){
                    }
                 }
              }
+//             ec_readstate();
             return 0;
         }
         else{
@@ -70,12 +70,12 @@ quint32 EthercatMaster::getSlaveCount(){
 }
 
 quint32 EthercatMaster::getSlaveState(quint32 slave_id){
-    return ec_slave[slave_id].state;
+    return ec_slave[slave_id+1].state;
 }
 
 QString EthercatMaster::getSlaveInfo(quint32 slave_id){
     QJsonObject info;
-    ec_slavet* slave = &ec_slave[slave_id];
+    ec_slavet* slave = &ec_slave[slave_id+1];
     info.insert("ec_state",slave->state);
     info.insert("ALstatuscode",slave->ALstatuscode);
     info.insert("configadr",slave->configadr);
@@ -88,51 +88,84 @@ QString EthercatMaster::getSlaveInfo(quint32 slave_id){
     info.insert("Obits",slave->Obits);
     info.insert("Obytes",(int)slave->Obytes);
     info.insert("name",slave->name);
+    info.insert("SIIindex",slave->SIIindex);
+    info.insert("parent",slave->parent);
+    info.insert("parentport",slave->parentport);
+    info.insert("entryport",slave->entryport);
+    info.insert("eep_8byte",slave->eep_8byte);
+    info.insert("eep_pdi",slave->eep_pdi);
+    info.insert("group",slave->group);
+    info.insert("islost",slave->islost);
     return QString(QJsonDocument(info).toJson());
 }
 
+qint32 EthercatMaster::getLastWorkCounter(){
+    return wkc;
+}
+
 qint32 EthercatMaster::readSdo(quint32 slave_id,quint32 main_index,quint32 sub_index,quint32 size){
-    if(size == 0){
-        size = 1;
-    }
     int32 rdl = size;
     int8_t u8 = 0;
     int16_t u16 = 0;
     int32_t u32 = 0;
-    if(size == 1){
-        ec_SDOread(slave_id, main_index, sub_index, FALSE, &rdl, &u8, EC_TIMEOUTRXM);
+    wkc = 0;
+    ++slave_id;
+    if(size == 0){
+        rdl = sizeof (u8);
+        wkc = ec_SDOread(slave_id, main_index, sub_index, FALSE, &rdl, &u8, EC_TIMEOUTRXM);
+        qDebug("readSdo8 %d %d %d %d %d %d",slave_id,main_index,sub_index,rdl,u8,wkc);
         return u8;
     }
     else if(size == 1){
-        ec_SDOread(slave_id, main_index, sub_index, FALSE, &rdl, &u16, EC_TIMEOUTRXM);
+        rdl = sizeof (u16);
+        wkc = ec_SDOread(slave_id, main_index, sub_index, FALSE, &rdl, &u16, EC_TIMEOUTRXM);
+        qDebug("readSdo16 %d %d %d %d %d %d",slave_id,main_index,sub_index,rdl,u16,wkc);
         return u16;
     }
-    else if(size == 1){
-        ec_SDOread(slave_id, main_index, sub_index, FALSE, &rdl, &u32, EC_TIMEOUTRXM);
+    else if(size == 2){
+        rdl = sizeof (u32);
+        wkc = ec_SDOread(slave_id, main_index, sub_index, FALSE, &rdl, &u32, EC_TIMEOUTRXM);
+        qDebug("readSdo32 %d %d %d %d %d %d",slave_id,main_index,sub_index,rdl,u32,wkc);
         return u32;
     }
     return 0;
 }
 
 qint32 EthercatMaster::writeSdo(quint32 slave_id,quint32 main_index,quint32 sub_index,quint32 size,qint32 value){
-    if(size == 0){
-        size = 1;
-    }
     int32 rdl = size;
     int8_t u8 = value;
     int16_t u16 = value;
     int32_t u32 = value;
-    if(size == 1){
-        ec_SDOwrite(slave_id, main_index, sub_index, FALSE, rdl, &u8, EC_TIMEOUTRXM);
+    wkc = 0;
+    ++slave_id;
+    if(size == 0){
+        rdl = sizeof (u8);
+        wkc = ec_SDOwrite(slave_id, main_index, sub_index, FALSE, rdl, &u8, EC_TIMEOUTRXM);
+        qDebug("readSdo8 %d %d %d %d %d %d",slave_id,main_index,sub_index,rdl,u8,wkc);
         return u8;
     }
     else if(size == 1){
-        ec_SDOwrite(slave_id, main_index, sub_index, FALSE, rdl, &u16, EC_TIMEOUTRXM);
+        rdl = sizeof (u16);
+        wkc = ec_SDOwrite(slave_id, main_index, sub_index, FALSE, rdl, &u16, EC_TIMEOUTRXM);
+        qDebug("readSdo8 %d %d %d %d %d %d",slave_id,main_index,sub_index,rdl,u8,wkc);
         return u16;
     }
-    else if(size == 1){
-        ec_SDOwrite(slave_id, main_index, sub_index, FALSE, rdl, &u32, EC_TIMEOUTRXM);
+    else if(size == 2){
+        rdl = sizeof (u32);
+        wkc = ec_SDOwrite(slave_id, main_index, sub_index, FALSE, rdl, &u32, EC_TIMEOUTRXM);
+        qDebug("readSdo8 %d %d %d %d %d %d",slave_id,main_index,sub_index,rdl,u8,wkc);
         return u32;
     }
     return 0;
+}
+
+qint32 EthercatMaster::writeAlias(quint32 slave_id,quint32 alias_id){
+    ++slave_id;
+    wkc = 0;
+    ec_slavet* slave = &ec_slave[slave_id];
+    slave->aliasadr = alias_id;
+    wkc = ec_writealias(slave_id);
+
+    qDebug("writeAlias slave_id = %d ,alias_id = %d ,ret = %d ",slave_id,alias_id,wkc);
+    return wkc;
 }

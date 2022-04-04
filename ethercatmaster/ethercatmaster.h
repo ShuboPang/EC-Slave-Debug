@@ -74,6 +74,10 @@ public:
     ///
     Q_INVOKABLE qint32 writeSdo(quint32 slave_id,quint32 main_index,quint32 sub_index,quint32 size,qint32 value);
 
+    Q_INVOKABLE qint32 getLastWorkCounter();
+
+    Q_INVOKABLE qint32 writeAlias(quint32 slave_id,quint32 alias_id);
+
 private:
     char IOmap[4096];
     ec_ODlistt ODlist;
@@ -82,6 +86,8 @@ private:
     boolean printMAP = FALSE;
     char usdo[128];
     char hstr[1024];
+
+    int wkc;
 };
 
 #endif // ETHERCATMASTER_H

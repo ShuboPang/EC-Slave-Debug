@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
             break;
         }
     }
-
+    setbuf(stdout, NULL);
     QQmlApplicationEngine engine;
     EthercatMaster ethercatmaster;
 

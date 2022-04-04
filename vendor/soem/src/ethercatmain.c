@@ -822,6 +822,25 @@ int ecx_writestate(ecx_contextt *context, uint16 slave)
    return 0;
 }
 
+int ecx_writealias(ecx_contextt *context, uint16 slave)
+{
+    uint16 configadr, slstate;
+
+    if (slave == 0)
+    {
+        slstate = htoes(context->slavelist[slave].aliasadr);
+        return ecx_BWR(context->port, 0, ECT_REG_ALIAS, sizeof(slstate), &slstate, EC_TIMEOUTRET3); /* write slave alias */
+    }
+    else
+    {
+        configadr = context->slavelist[slave].configadr;
+
+//        printf("configadr = %d %x %d \n",configadr,ECT_REG_ALIAS,htoes(context->slavelist[slave].aliasadr));
+        return ecx_FPWRw(context->port, configadr, ECT_REG_ALIAS, htoes(context->slavelist[slave].aliasadr), EC_TIMEOUTRET3); /* write slave alias */
+    }
+    return 0;
+}
+
 /** Check actual slave state.
  * This is a blocking function.
  * @param[in]  context        = context struct
@@ -1950,6 +1969,11 @@ int ec_readstate(void)
 int ec_writestate(uint16 slave)
 {
    return ecx_writestate(&ecx_context, slave);
+}
+
+int ec_writealias(uint16 slave)
+{
+    return ecx_writealias(&ecx_context, slave);
 }
 
 uint16 ec_statecheck(uint16 slave, uint16 reqstate, int timeout)

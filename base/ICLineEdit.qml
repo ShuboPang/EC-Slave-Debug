@@ -26,6 +26,11 @@ Rectangle {
 
 
     function intConfigValue(){
+        if(isHex){
+            if(input.text.indexOf("0X") == 0 || input.text.indexOf("0x") == 0){
+                return parseInt(input.text,16)
+            }
+        }
         return parseInt(input.text)
     }
 
@@ -53,7 +58,7 @@ Rectangle {
     }
     RegExpValidator {
         id: hex
-        regExp: /0[xX][[0-9a-fA-F]]+/
+        regExp: /[0-9a-fA-FxX]+/
     }
     Row{
         Label {

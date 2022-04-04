@@ -100,7 +100,6 @@ ApplicationWindow {
                 console.log("ethercat master init ret = ",ret);
                 if(ret == 0){
                     dialog.waring(qsTr("初始化"),qsTr("识别到从站数量：")+ethercatmaster.getSlaveCount())
-                    slaveDeviceList.refreshSlaveState()
                 }
                 else if(ret == -1){
                     dialog.waring(qsTr("初始化失败"),qsTr("网卡不存在"))
@@ -111,6 +110,7 @@ ApplicationWindow {
                 else if(ret == -3){
                     dialog.waring(qsTr("初始化失败"),qsTr("未找到Ethercat从站设备"))
                 }
+                slaveDeviceList.refreshSlaveState()
             }
         }
         Button{
@@ -165,7 +165,7 @@ ApplicationWindow {
 //                for(let i = 0;i<8;i++){
                     var info = ethercatmaster.getSlaveInfo(i);
                     var slaveInfo = JSON.parse(info);
-                    slaveDeviceListModel.append(slaveInfoS)
+                    slaveDeviceListModel.append(slaveInfo)
                     console.log("refreshSlaveState",i,info)
                 }
             }
@@ -182,7 +182,7 @@ ApplicationWindow {
                         text: qsTr("从站名字")
                         anchors.verticalCenter: parent.verticalCenter
                         horizontalAlignment: Text.AlignHCenter
-                        width: 200
+                        width: 220
                     }
                     Rectangle{
                         width: 1
@@ -193,7 +193,7 @@ ApplicationWindow {
                         text: qsTr("厂家ID")
                         anchors.verticalCenter: parent.verticalCenter
                         horizontalAlignment: Text.AlignHCenter
-                        width: 100
+                        width: 90
                     }
                     Rectangle{
                         width: 1
@@ -204,7 +204,7 @@ ApplicationWindow {
                         text: qsTr("产品ID")
                         anchors.verticalCenter: parent.verticalCenter
                         horizontalAlignment: Text.AlignHCenter
-                        width: 100
+                        width: 90
                     }
                     Rectangle{
                         width: 1
@@ -229,10 +229,10 @@ ApplicationWindow {
                     spacing: 3
                     height: parent.height
                     Text {
-                        text: name
+                        text: index+"   "+aliasadr+":"+SIIindex+" "+name
                         anchors.verticalCenter: parent.verticalCenter
-
-                        width: 200
+                        horizontalAlignment: Text.AlignHCenter
+                        width: 220
                     }
                     Rectangle{
                         width: 1
@@ -240,21 +240,10 @@ ApplicationWindow {
                         color: "black"
                     }
                     Text {
-                        text: "0x"+parseInt(eep_id)
-                        anchors.verticalCenter: parent.verticalCenter
-                        horizontalAlignment: Text.AlignRight
-                        width: 100
-                    }
-                    Rectangle{
-                        width: 1
-                        height: parent.height
-                        color: "black"
-                    }
-                    Text {
-                        text: "0x"+parseInt(eep_man,16)
+                        text: "0x"+eep_man.toString(16)
                         anchors.verticalCenter: parent.verticalCenter
                         horizontalAlignment: Text.AlignRight
-                        width: 100
+                        width: 90
                     }
                     Rectangle{
                         width: 1
@@ -262,7 +251,18 @@ ApplicationWindow {
                         color: "black"
                     }
                     Text {
-                        text: "0x"+parseInt(ec_state,16)+"("+EthercatInfoJs.__EthercatSlaveStateEnum[ec_state]+")"
+                        text: "0x"+eep_id.toString(16)
+                        anchors.verticalCenter: parent.verticalCenter
+                        horizontalAlignment: Text.AlignRight
+                        width: 90
+                    }
+                    Rectangle{
+                        width: 1
+                        height: parent.height
+                        color: "black"
+                    }
+                    Text {
+                        text: "0x"+ec_state.toString(16)+"("+EthercatInfoJs.__EthercatSlaveStateEnum[ec_state]+")"
                         anchors.verticalCenter: parent.verticalCenter
                         horizontalAlignment: Text.AlignHCenter
                         width: 150
@@ -298,6 +298,7 @@ ApplicationWindow {
         }
     }
     Column{
+        id:sdoOptionPage
         spacing: 10
         x:10
         y:10
@@ -321,7 +322,7 @@ ApplicationWindow {
             }
             ComboBox{
                 id:datatype
-                model: [qsTr("NULL"),qsTr("int8"),qsTr("int16"),qsTr("int32")]
+                model: [qsTr("int8"),qsTr("int16"),qsTr("int32")]
                 currentIndex: 1
                 onVisibleChanged: {
                     if(visible){
@@ -336,32 +337,80 @@ ApplicationWindow {
             ICLineEdit{
                 id:readvalue
                 configName:qsTr("值")
-                isHex: true
+//                isHex: true
                 height: datatype.height
                 enabled: false
+                inputWidth: 150
             }
             Button{
                 text: qsTr("读")
                 onClicked: {
-                    if(slaveDeviceList.currentIndex == -1){
+                    if(slaveDeviceListModel.count == 0){
+                        dialog.waring(qsTr("SDO操作错误"),qsTr("请先初始化网卡"))
                         return
                     }
-                    readvalue.configValue = ethercatmaster.readSdo(slaveDeviceList.currentIndex,mainIndex.intConfigValue(),subIndex.intConfigValue(),datatype.currentIndex)
+                    if(slaveDeviceList.currentIndex == -1){
+                        dialog.waring(qsTr("SDO操作错误"),qsTr("请选择一个从站设备"))
+                        return
+                    }
+                    var value = ethercatmaster.readSdo(slaveDeviceList.currentIndex,mainIndex.intConfigValue(),subIndex.intConfigValue(),datatype.currentIndex)
+                    readvalue.configValue = value+"("+"0x"+value.toString(16)+")"
+                    if(ethercatmaster.getLastWorkCounter() <= 0){
+                        dialog.waring(qsTr("SOD读操作失败"),qsTr("参数传入错误"))
+                    }
                 }
             }
-       }
-       Row{
-           spacing: 10
-           anchors.right: parent.right
             ICLineEdit{
+                id:writeValue
                 configName:qsTr("值")
-                isHex: true
                 height: datatype.height
             }
             Button{
                 text: qsTr("写")
+                onClicked: {
+                    if(slaveDeviceListModel.count == 0){
+                        dialog.waring(qsTr("SDO操作错误"),qsTr("请先初始化网卡"))
+                        return
+                    }
+                    if(slaveDeviceList.currentIndex == -1){
+                        dialog.waring(qsTr("SDO操作错误"),qsTr("请选择一个从站设备"))
+                        return
+                    }
+                    ethercatmaster.writeSdo(slaveDeviceList.currentIndex,mainIndex.intConfigValue(),subIndex.intConfigValue(),datatype.currentIndex,writeValue.intConfigValue())
+                    if(ethercatmaster.getLastWorkCounter() <= 0){
+                        dialog.waring(qsTr("SOD写操作失败"),qsTr("参数传入错误"))
+                    }
+                }
+            }
+       }
+//       Row{
+//           spacing: 10
+//           anchors.right: parent.right
+
+//        }
+    }
+
+    Column{
+        anchors.top: sdoOptionPage.bottom
+        anchors.topMargin: 10
+        anchors.left:slaveDeviceListPage.right
+        anchors.leftMargin: 10
+        Row{
+            spacing: 10
+            ICLineEdit{
+                id:writeAliasValue
+                configName: qsTr("逻辑地址")
+                height: saveAliasBtn.height
+            }
+            Button{
+                id:saveAliasBtn
+                text: qsTr("保存")
+                onClicked:  {
+                    ethercatmaster.writeAlias(slaveDeviceList.currentIndex,writeAliasValue.intConfigValue())
+                }
             }
         }
+
     }
 
     Dialog{

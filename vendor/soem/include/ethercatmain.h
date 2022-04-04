@@ -500,6 +500,7 @@ uint16 ec_siiSMnext(uint16 slave, ec_eepromSMt* SM, uint16 n);
 int ec_siiPDO(uint16 slave, ec_eepromPDOt* PDO, uint8 t);
 int ec_readstate(void);
 int ec_writestate(uint16 slave);
+int ec_writealias(uint16 slave);
 uint16 ec_statecheck(uint16 slave, uint16 reqstate, int timeout);
 int ec_mbxempty(uint16 slave, int timeout);
 int ec_mbxsend(uint16 slave,ec_mbxbuft *mbx, int timeout);
@@ -541,6 +542,7 @@ uint16 ecx_siiSMnext(ecx_contextt *context, uint16 slave, ec_eepromSMt* SM, uint
 int ecx_siiPDO(ecx_contextt *context, uint16 slave, ec_eepromPDOt* PDO, uint8 t);
 int ecx_readstate(ecx_contextt *context);
 int ecx_writestate(ecx_contextt *context, uint16 slave);
+int ecx_writealias(ecx_contextt *context, uint16 slave);
 uint16 ecx_statecheck(ecx_contextt *context, uint16 slave, uint16 reqstate, int timeout);
 int ecx_mbxempty(ecx_contextt *context, uint16 slave, int timeout);
 int ecx_mbxsend(ecx_contextt *context, uint16 slave,ec_mbxbuft *mbx, int timeout);

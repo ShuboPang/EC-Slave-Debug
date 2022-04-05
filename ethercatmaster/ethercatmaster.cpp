@@ -4,6 +4,7 @@
 #include <QMessageBox>
 #include <QJsonObject>
 #include <QJsonDocument>
+#include <QFile>
 
 EthercatMaster::EthercatMaster()
 {
@@ -164,19 +165,19 @@ qint32 EthercatMaster::writeSdo(quint32 slave_id,quint32 main_index,quint32 sub_
     if(size == 0){
         rdl = sizeof (u8);
         wkc = ec_SDOwrite(slave_id, main_index, sub_index, FALSE, rdl, &u8, EC_TIMEOUTRXM);
-        qDebug("readSdo8 %d %d %d %d %d %d",slave_id,main_index,sub_index,rdl,u8,wkc);
+        qDebug("writeSdo8 %d %d %d %d %d %d",slave_id,main_index,sub_index,rdl,u8,wkc);
         return u8;
     }
     else if(size == 1){
         rdl = sizeof (u16);
         wkc = ec_SDOwrite(slave_id, main_index, sub_index, FALSE, rdl, &u16, EC_TIMEOUTRXM);
-        qDebug("readSdo8 %d %d %d %d %d %d",slave_id,main_index,sub_index,rdl,u8,wkc);
+        qDebug("writeSdo16 %d %d %d %d %d %d",slave_id,main_index,sub_index,rdl,u16,wkc);
         return u16;
     }
     else if(size == 2){
         rdl = sizeof (u32);
         wkc = ec_SDOwrite(slave_id, main_index, sub_index, FALSE, rdl, &u32, EC_TIMEOUTRXM);
-        qDebug("readSdo8 %d %d %d %d %d %d",slave_id,main_index,sub_index,rdl,u8,wkc);
+        qDebug("writeSdo32 %d %d %d %d %d %d",slave_id,main_index,sub_index,rdl,u32,wkc);
         return u32;
     }
     return 0;
@@ -191,4 +192,33 @@ qint32 EthercatMaster::writeAlias(quint32 slave_id,quint32 alias_id){
 
     qDebug("writeAlias slave_id = %d ,alias_id = %d ,ret = %d ",slave_id,alias_id,wkc);
     return wkc;
+}
+
+QString EthercatMaster::readFile(const QString& path){
+    QString str = path;
+    str = str.mid(8);
+    QFile file(str);
+    str="";
+    if(file.open(QFile::ReadOnly)){
+        str = file.readAll();
+    }
+    else{
+        qDebug()<<path<<"readFile open failed";
+    }
+    return str.toUtf8();
+}
+
+qint32 EthercatMaster::writeFile(const QString& path,const QString& text){
+    QString str = path;
+    str = str.mid(8);
+    QFile file(str);
+    str="";
+    if(file.open(QFile::ReadWrite)){
+        file.resize(0);
+        file.write(text.toUtf8());
+    }
+    else{
+        qDebug()<<path<<"writeFile open failed";
+    }
+    return 0;
 }

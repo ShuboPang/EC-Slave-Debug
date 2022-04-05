@@ -6,6 +6,8 @@
 #include <QQmlContext>
 #include <QFont>
 
+#include <QTextCodec>  //添加头文
+
 #include "scanhardware/scanhardware.h"
 #include "ethercatmaster/ethercatmaster.h"
 
@@ -30,7 +32,7 @@ int main(int argc, char *argv[])
     QQmlApplicationEngine engine;
     EthercatMaster ethercatmaster;
     QFont font = app.font();
-    font.setPixelSize(20);
+    font.setPixelSize(18);
     app.setFont(font);
     const QUrl url(QStringLiteral("qrc:/main.qml"));
     QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,

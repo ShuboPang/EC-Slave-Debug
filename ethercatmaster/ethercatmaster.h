@@ -84,6 +84,11 @@ public:
 
     Q_INVOKABLE qint32 writeAlias(quint32 slave_id,quint32 alias_id);
 
+    Q_INVOKABLE QString readFile(const QString& path);
+
+    Q_INVOKABLE qint32 writeFile(const QString& path,const QString& text);
+
+
 private:
     char IOmap[4096];
     ec_ODlistt ODlist;

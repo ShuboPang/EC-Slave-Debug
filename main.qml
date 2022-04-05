@@ -4,6 +4,7 @@ import QtQml 2.0
 import QtQuick.Controls 2.0
 import QtQuick.Controls 2.5
  import QtQuick.Layouts 1.12
+import QtQuick.Dialogs 1.3
 import"./base"
 import "EthercatInfo.js" as EthercatInfoJs
 
@@ -15,17 +16,16 @@ ApplicationWindow {
     menuBar: MenuBar{
             Menu {
                  title: qsTr("&文件")
-                 Action {
-                     text: qsTr("&新建...")
-                     shortcut : "Ctrl+N"
-                     onTriggered: {
-                        console.log("File New")
-                     }
-
+                 Action { text: qsTr("&打开...")
+                    onTriggered: {
+                        openFileDialog.visible = true;
+                    }
                  }
-                 Action { text: qsTr("&打开...") }
-                 Action { text: qsTr("&保存") }
-                 Action { text: qsTr("另存为...") }
+                 Action { text: qsTr("&保存")
+                    onTriggered: {
+                        outputFileDialog.visible = true;
+                    }
+                 }
                  MenuSeparator { }
                  Action {
                      text: qsTr("&退出")
@@ -85,10 +85,14 @@ ApplicationWindow {
         spacing: 10
         y:10
         x:10
-
+        Text {
+            text: qsTr("网卡选择:")
+            height: networkList.height
+            anchors.verticalCenter: networkList.verticalCenter
+        }
         ComboBox{
             id:networkList
-            width: 300
+            width: 450
         }
         Button{
             text: qsTr("初始化")
@@ -113,33 +117,14 @@ ApplicationWindow {
                 }
                 slaveDeviceList.refreshSlaveState()
                 slaveSel.model = ethercatmaster.getSlaveNameList();
+                esdSlaveSel.model = ethercatmaster.getSlaveNameList();
                 console.log("ethermaster.getSlaveNameList()",ethercatmaster.getSlaveNameList())
             }
         }
-        Button{
-            text:qsTr("刷新")
-            onClicked: {
-                slaveDeviceList.refreshSlaveState()
-            }
-        }
-        CheckBox{
-            text: qsTr("自动刷新")
-            visible: false
-            Timer{
-                interval: 100
-                running: true
-                repeat: true;
-                onTriggered: {
-                    if(ethercatmaster.getSlaveCount() != slaveDeviceListModel.count){
-                        return;
-                    }
-                    for(let i = 0;i<ethercatmaster.getSlaveCount();i++){
-                        var info = ethercatmaster.getSlaveInfo(i);
-                        slaveDeviceListModel.setProperty(i,"ec_state",JSON.parse(info).ec_state)
-//                        console.log("refreshSlaveState",i,info)
-                    }
-                }
-            }
+        Text {
+            text: qsTr("从站选择:")
+            height: slaveSel.height
+            anchors.verticalCenter: slaveSel.verticalCenter
         }
         ComboBox{
             id:slaveSel
@@ -147,6 +132,58 @@ ApplicationWindow {
             onCurrentIndexChanged: {
                 var slaveinfo = slaveDeviceListModel.get(slaveSel.currentIndex)
                 slaveAllInfo.text = JSON.stringify(slaveinfo,null,2);
+                // 载入对象字典
+                slaveObjectDictionaryListModel.clear()
+                var slave_ = EthercatInfoJs.ethercatSlaveDeviceFind(slaveinfo.eep_man,slaveinfo.eep_id);
+                if(slave_ != undefined){
+
+                    let slave_sdo = slave_.sdo
+                    for(let i = 0;i<slave_sdo.length;i++){
+                        let size = 0;
+                        if(slave_sdo[i].type == 2){
+                            size = 1;
+                        }
+                        else if(slave_sdo[i].type == 4){
+                            size = 2;
+                        }
+                        let  value = ethercatmaster.readSdo(slaveSel.currentIndex,slave_sdo[i].main_index,slave_sdo[i].sub_index,size)
+                        slaveObjectDictionaryListModel.append({"main_index":slave_sdo[i].main_index,"sub_index":slave_sdo[i].sub_index,"value":value,
+                                                              "unit":slave_sdo[i].unit,"describe":slave_sdo[i].describe,"type":slave_sdo[i].type
+                                                              });
+                    }
+
+                }
+
+            }
+        }
+        Button{
+            text:qsTr("刷新")
+            onClicked: {
+                if(slaveOptionHeader.currentIndex == 2){
+                    //< 对象字典刷新
+                    if(slaveObjectDictionaryListModel.count == 0){
+                        return;
+                    }
+                    for(let i = 0;i<slaveObjectDictionaryListModel.count;i++){
+                        let  slave_sdo = slaveObjectDictionaryListModel.get(i);
+                        let size = 0;
+                        if(slave_sdo.type == 2){
+                            size = 1;
+                        }
+                        else if(slave_sdo.type == 4){
+                            size = 2;
+                        }
+                        let  value = ethercatmaster.readSdo(slaveSel.currentIndex,slave_sdo.main_index,slave_sdo.sub_index,size)
+                        slaveObjectDictionaryListModel.setProperty(i,"value",value);
+                    }
+
+                }
+            }
+        }
+        Button{
+            text:qsTr("写EEPROM")
+            onClicked: {
+
             }
         }
     }
@@ -181,7 +218,7 @@ ApplicationWindow {
 
     StackLayout{
         width: slaveOptionHeader.width
-        height:parent.height - topHeader.height - 30
+        height:parent.height - topHeader.height - 80
         currentIndex:  slaveOptionHeader.currentIndex
         anchors.top: slaveOptionHeader.bottom
         anchors.topMargin: 10
@@ -361,12 +398,21 @@ ApplicationWindow {
                         configName:qsTr("主索引")
                         isHex: true
                         height: datatype.height
+                        inputWidth: 200
+                        onConfigValueEditFinshed: {
+                                var slaveInfo = slaveDeviceListModel.get(slaveSel.currentIndex)
+                                sdoDescribe.text = sdoDescribe.sdoDescribeUpdate(slaveInfo.eep_man,slaveInfo.eep_id,mainIndex.intConfigValue(),subIndex.intConfigValue())
+                        }
                     }
                     ICLineEdit{
                         id:subIndex
                         configName:qsTr("子索引")
                         isHex: true
                         height: datatype.height
+                        onConfigValueEditFinshed: {
+                                var slaveInfo = slaveDeviceListModel.get(slaveSel.currentIndex)
+                                sdoDescribe.text = sdoDescribe.sdoDescribeUpdate(slaveInfo.eep_man,slaveInfo.eep_id,mainIndex.intConfigValue(),subIndex.intConfigValue())
+                        }
                     }
                     ComboBox{
                         id:datatype
@@ -383,7 +429,7 @@ ApplicationWindow {
         //                isHex: true
                         height: datatype.height
                         enabled: false
-                        inputWidth: 150
+                        inputWidth: 250
                     }
                     Button{
                         text: qsTr("读")
@@ -426,6 +472,29 @@ ApplicationWindow {
                         }
                     }
                }
+                Row{
+                    spacing: 10
+                    Text {
+                        text: qsTr("描述：")
+                    }
+                    Text {
+                        id:sdoDescribe
+
+                        function sdoDescribeUpdate(eep_man,eep_id,sdo_main_index,sdo_sub_index){
+                            var slave = EthercatInfoJs.ethercatSlaveDeviceFind(eep_man,eep_id)
+                            if(slave == undefined){
+                                return "";
+                            }
+                            var slave_sdo = slave.sdo
+                            for(let i = 0;i<slave_sdo.length;i++){
+                                if(slave_sdo[i].main_index == sdo_main_index && slave_sdo[i].sub_index == sdo_sub_index){
+                                    return slave_sdo[i].describe;
+                                }
+                            }
+                            return ""
+                        }
+                    }
+                }
             }
         }
         Item {
@@ -449,7 +518,7 @@ ApplicationWindow {
                         Text {
                             id: main_index_h
                             text: qsTr("索引")
-                            width: 80
+                            width: 130
                             anchors.verticalCenter: parent.verticalCenter
                             horizontalAlignment: Text.AlignHCenter
                         }
@@ -461,7 +530,7 @@ ApplicationWindow {
                         Text {
                             id: sub_index_h
                             text: qsTr("子索引")
-                            width: 80
+                            width: 130
                             anchors.verticalCenter: parent.verticalCenter
                             horizontalAlignment: Text.AlignHCenter
                         }
@@ -473,7 +542,7 @@ ApplicationWindow {
                         Text {
                             id: value_h
                             text: qsTr("值")
-                            width: 80
+                            width: 200
                             anchors.verticalCenter: parent.verticalCenter
                             horizontalAlignment: Text.AlignHCenter
                         }
@@ -485,7 +554,18 @@ ApplicationWindow {
                         Text {
                             id: unit_h
                             text: qsTr("单位")
-                            width: 80
+                            width: 100
+                            anchors.verticalCenter: parent.verticalCenter
+                            horizontalAlignment: Text.AlignHCenter
+                        }
+                        Rectangle{
+                            width: 1
+                            height: parent.height
+                            color: "black"
+                        }
+                        Text {
+                            text: qsTr("类型")
+                            width: 100
                             anchors.verticalCenter: parent.verticalCenter
                             horizontalAlignment: Text.AlignHCenter
                         }
@@ -497,7 +577,7 @@ ApplicationWindow {
                         Text {
                             id: describe_h
                             text: qsTr("描述")
-                            width: 80
+                            width: 600
                             anchors.verticalCenter: parent.verticalCenter
                             horizontalAlignment: Text.AlignHCenter
                         }
@@ -508,13 +588,14 @@ ApplicationWindow {
                     height: 30
                     border.color: "black"
                     border.width: 1
+                    property bool isEdit: false
+                    color: (slaveObjectDictionaryList.currentIndex == index)?"gray":(index%2==0?"white":"#f5f5f5")
                     Row{
                         width: parent.width
                         height: parent.height
                         Text {
-                            id: main_index
-                            text: main_index
-                            width: main_index_h.width
+                            text: "0x"+main_index.toString(16)
+                            width: 130
                             anchors.verticalCenter: parent.verticalCenter
                             horizontalAlignment: Text.AlignHCenter
                         }
@@ -524,9 +605,8 @@ ApplicationWindow {
                             color: "black"
                         }
                         Text {
-                            id: sub_index
-                            text: sub_index
-                            width: sub_index_h.width
+                            text: sub_index+"("+"0x"+sub_index.toString(16)+")"
+                            width: 130
                             anchors.verticalCenter: parent.verticalCenter
                             horizontalAlignment: Text.AlignHCenter
                         }
@@ -536,9 +616,9 @@ ApplicationWindow {
                             color: "black"
                         }
                         Text {
-                            id: value
-                            text: value
-                            width: value_h.width
+                            id:sdo_value
+                            text: value+"("+"0x"+value.toString(16)+")"
+                            width: 200
                             anchors.verticalCenter: parent.verticalCenter
                             horizontalAlignment: Text.AlignHCenter
                         }
@@ -548,9 +628,29 @@ ApplicationWindow {
                             color: "black"
                         }
                         Text {
-                            id: unit
+                            text: {
+                                if(type == 1){
+                                    return "int8"
+                                }
+                                else if(type == 2){
+                                    return "int16"
+                                }
+                                else if(type == 4){
+                                    return "int32"
+                                }
+                            }
+                            width: 100
+                            anchors.verticalCenter: parent.verticalCenter
+                            horizontalAlignment: Text.AlignHCenter
+                        }
+                        Rectangle{
+                            width: 1
+                            height: parent.height
+                            color: "black"
+                        }
+                        Text {
                             text: unit
-                            width: unit_h.width
+                            width: 100
                             anchors.verticalCenter: parent.verticalCenter
                             horizontalAlignment: Text.AlignHCenter
                         }
@@ -560,11 +660,46 @@ ApplicationWindow {
                             color: "black"
                         }
                         Text {
-                            id: describe
                             text: describe
-                            width: describe_h.width
+                            width: 600
                             anchors.verticalCenter: parent.verticalCenter
                             horizontalAlignment: Text.AlignLeft
+                        }
+                    }
+                    MouseArea{
+                        anchors.fill: parent
+                        onClicked: {
+                            if(slaveObjectDictionaryList.currentIndex != index){
+                                slaveObjectDictionaryList.currentItem.isEdit = false
+                            }
+                            slaveObjectDictionaryList.currentIndex = index;
+                        }
+                        onDoubleClicked: {
+                            sdo__write_value.configValue = value;
+                            parent.isEdit = true;
+                            sdo__write_value.focus = true
+                        }
+                    }
+                    ICLineEdit{
+                        id:sdo__write_value
+                        inputWidth: 200
+                        anchors.verticalCenter: parent.verticalCenter
+                        visible: parent.isEdit
+                        x:262
+                        onConfigValueEditFinshed:{
+                            parent.isEdit = false
+
+                            ///< 写sdo
+                            let size = 0;
+                            if(type == 2){
+                                size = 1;
+                            }
+                            else if(type == 4){
+                                size = 2;
+                            }
+                            ethercatmaster.writeSdo(slaveSel.currentIndex,main_index,sub_index,size,sdo__write_value.intConfigValue())
+                            let  value = ethercatmaster.readSdo(slaveSel.currentIndex,main_index,sub_index,size)
+                            slaveObjectDictionaryListModel.setProperty(index,"value",value);
                         }
                     }
                 }
@@ -615,11 +750,265 @@ ApplicationWindow {
         }
     }
 
+    FileDialog{
+        id: openFileDialog
+        title: qsTr("伺服参数文件位置")
+        nameFilters: [ "ESD files(*.esd)"]
+        onAccepted: {
+            var esd = ethercatmaster.readFile(fileUrl);
+            esdfileListModel.clear()
+            if(esd.length == 0)
+                return;
+            var esd_ = JSON.parse(esd);
+            var esd_sdo = esd_.sdo;
+            for(let i = 0;i<esd_sdo.length;i++){
+                esdfileListModel.append(esd_sdo[i]);
+            }
+            esdfilePage.visible = true;
+            esdfilePage.title = fileUrl;
+        }
+    }
+    FileDialog{
+        id: outputFileDialog
+        title: qsTr("伺服参数文件保存位置")
+        nameFilters: ["ESD files(*.esd)"]
+        selectMultiple: false
+        onAccepted: {
+            if(slaveSel.currentIndex == -1){
+                return
+            }
+            var slaveInfo = slaveDeviceListModel.get(slaveSel.currentIndex)
+            var info = EthercatInfoJs.ethercatSlaveDeviceFind(slaveInfo.eep_man,slaveInfo.eep_id);
+            for(let i = 0;i<slaveObjectDictionaryListModel.count;i++){
+                info.sdo[i].value = slaveObjectDictionaryListModel.get(i).value;
+            }
+            ethercatmaster.writeFile(fileUrl,JSON.stringify(info,null,2))
+            dialog.waring(qsTr("伺服参数导出完成"),qsTr("伺服参数导出完成"))
+        }
+        Component.onCompleted: {
+
+        }
+    }
+
+    Window{
+        id:esdfilePage
+        visible: false
+        width: 1280
+        height: 700
+        Row{
+            id:esdOptionHeader
+            spacing: 10
+            ComboBox{
+                id:esdSlaveSel
+                width: 300
+            }
+            Button{
+                text:qsTr("写参数")
+                onClicked: {
+                    if(esdSlaveSel.currentIndex == -1){
+                        return ;
+                    }
+
+                    for(let i = 0;i<esdfileListModel.count;i++){
+                        let esd_sdo = esdfileListModel.get(i);
+
+                        ///< 写sdo
+                        let size = 0;
+                        if(esd_sdo.type == 2){
+                            size = 1;
+                        }
+                        else if(esd_sdo.type == 4){
+                            size = 2;
+                        }
+                        ethercatmaster.writeSdo(esdSlaveSel.currentIndex,esd_sdo.main_index,esd_sdo.sub_index,size,esd_sdo.value)
+                    }
+                     dialog.waring(qsTr("伺服参数写入完成"),qsTr("伺服参数写入完成"))
+                }
+            }
+            Button{
+                text:qsTr("写EEPROM")
+                onClicked: {
+
+                }
+            }
+        }
+        ListView{
+            id:esdfileList
+            model: ListModel{
+                id:esdfileListModel
+            }
+            width: parent.width
+            height: parent.height - 60
+            anchors.top: esdOptionHeader.bottom
+            anchors.topMargin:10
+            clip: true
+            header: Rectangle{
+                width: parent.width
+                height: 30
+                border.color: "black"
+                border.width: 1
+                Row{
+                    width: parent.width
+                    height: parent.height
+                    Text {
+                        text: qsTr("索引")
+                        width: 130
+                        anchors.verticalCenter: parent.verticalCenter
+                        horizontalAlignment: Text.AlignHCenter
+                    }
+                    Rectangle{
+                        width: 1
+                        height: parent.height
+                        color: "black"
+                    }
+                    Text {
+                        text: qsTr("子索引")
+                        width: 130
+                        anchors.verticalCenter: parent.verticalCenter
+                        horizontalAlignment: Text.AlignHCenter
+                    }
+                    Rectangle{
+                        width: 1
+                        height: parent.height
+                        color: "black"
+                    }
+                    Text {
+                        text: qsTr("值")
+                        width: 200
+                        anchors.verticalCenter: parent.verticalCenter
+                        horizontalAlignment: Text.AlignHCenter
+                    }
+                    Rectangle{
+                        width: 1
+                        height: parent.height
+                        color: "black"
+                    }
+                    Text {
+                        text: qsTr("单位")
+                        width: 100
+                        anchors.verticalCenter: parent.verticalCenter
+                        horizontalAlignment: Text.AlignHCenter
+                    }
+                    Rectangle{
+                        width: 1
+                        height: parent.height
+                        color: "black"
+                    }
+                    Text {
+                        text: qsTr("类型")
+                        width: 100
+                        anchors.verticalCenter: parent.verticalCenter
+                        horizontalAlignment: Text.AlignHCenter
+                    }
+                    Rectangle{
+                        width: 1
+                        height: parent.height
+                        color: "black"
+                    }
+                    Text {
+                        text: qsTr("描述")
+                        width: 600
+                        anchors.verticalCenter: parent.verticalCenter
+                        horizontalAlignment: Text.AlignHCenter
+                    }
+                }
+            }
+            delegate: Rectangle{
+                width: parent.width
+                height: 30
+                border.color: "black"
+                border.width: 1
+                property bool isEdit: false
+                color: (slaveObjectDictionaryList.currentIndex == index)?"gray":(index%2==0?"white":"#f5f5f5")
+                Row{
+                    width: parent.width
+                    height: parent.height
+                    Text {
+                        text: "0x"+main_index.toString(16)
+                        width: 130
+                        anchors.verticalCenter: parent.verticalCenter
+                        horizontalAlignment: Text.AlignHCenter
+                    }
+                    Rectangle{
+                        width: 1
+                        height: parent.height
+                        color: "black"
+                    }
+                    Text {
+                        text: sub_index+"("+"0x"+sub_index.toString(16)+")"
+                        width: 130
+                        anchors.verticalCenter: parent.verticalCenter
+                        horizontalAlignment: Text.AlignHCenter
+                    }
+                    Rectangle{
+                        width: 1
+                        height: parent.height
+                        color: "black"
+                    }
+                    Text {
+                        text: value+"("+"0x"+value.toString(16)+")"
+                        width: 200
+                        anchors.verticalCenter: parent.verticalCenter
+                        horizontalAlignment: Text.AlignHCenter
+                    }
+                    Rectangle{
+                        width: 1
+                        height: parent.height
+                        color: "black"
+                    }
+                    Text {
+                        text: {
+                            if(type == 1){
+                                return "int8"
+                            }
+                            else if(type == 2){
+                                return "int16"
+                            }
+                            else if(type == 4){
+                                return "int32"
+                            }
+                        }
+                        width: 100
+                        anchors.verticalCenter: parent.verticalCenter
+                        horizontalAlignment: Text.AlignHCenter
+                    }
+                    Rectangle{
+                        width: 1
+                        height: parent.height
+                        color: "black"
+                    }
+                    Text {
+                        text: unit
+                        width: 100
+                        anchors.verticalCenter: parent.verticalCenter
+                        horizontalAlignment: Text.AlignHCenter
+                    }
+                    Rectangle{
+                        width: 1
+                        height: parent.height
+                        color: "black"
+                    }
+                    Text {
+                        text: describe
+                        width: 600
+                        anchors.verticalCenter: parent.verticalCenter
+                        horizontalAlignment: Text.AlignLeft
+                    }
+                }
+                MouseArea{
+                    anchors.fill: parent
+                    onClicked: {
+                        slaveObjectDictionaryList.currentIndex = index;
+                    }
+                }
+            }
+        }
+    }
+
 
 
     Dialog{
         id:dialog
-        anchors.centerIn: parent
         Text {
             id: message
         }
@@ -640,6 +1029,7 @@ ApplicationWindow {
 
 
     Component.onCompleted: {
+        EthercatInfoJs.init();
         networkList.model = ethercatmaster.scanNetwork();
 
     }

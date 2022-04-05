@@ -168,6 +168,12 @@ ApplicationWindow {
             text: qsTr("对象字典")
         }
         TabButton{
+            text: qsTr("PDO设置")
+        }
+        TabButton{
+            text: qsTr("运动控制")
+        }
+        TabButton{
             text: qsTr("从站信息")
         }
 
@@ -564,6 +570,13 @@ ApplicationWindow {
                 }
             }
         }
+        Item {      //< PDO设置
+
+        }
+
+        Item {      //< 运动控制
+        }
+
         Item {
             //< 从站信息
             Column{

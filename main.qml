@@ -89,6 +89,7 @@ ApplicationWindow {
             text: qsTr("网卡选择:")
             height: networkList.height
             anchors.verticalCenter: networkList.verticalCenter
+            verticalAlignment: Text.AlignVCenter
         }
         ComboBox{
             id:networkList
@@ -125,6 +126,7 @@ ApplicationWindow {
             text: qsTr("从站选择:")
             height: slaveSel.height
             anchors.verticalCenter: slaveSel.verticalCenter
+            verticalAlignment: Text.AlignVCenter
         }
         ComboBox{
             id:slaveSel
@@ -551,9 +553,9 @@ ApplicationWindow {
                             height: parent.height
                             color: "black"
                         }
+
                         Text {
-                            id: unit_h
-                            text: qsTr("单位")
+                            text: qsTr("类型")
                             width: 100
                             anchors.verticalCenter: parent.verticalCenter
                             horizontalAlignment: Text.AlignHCenter
@@ -564,7 +566,8 @@ ApplicationWindow {
                             color: "black"
                         }
                         Text {
-                            text: qsTr("类型")
+                            id: unit_h
+                            text: qsTr("单位")
                             width: 100
                             anchors.verticalCenter: parent.verticalCenter
                             horizontalAlignment: Text.AlignHCenter

@@ -90,9 +90,6 @@ public:
 
 
 private:
-    char IOmap[4096];
-    ec_ODlistt ODlist;
-    ec_OElistt OElist;
     boolean printSDO = FALSE;
     boolean printMAP = FALSE;
     char usdo[128];

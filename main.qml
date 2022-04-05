@@ -776,6 +776,7 @@ ApplicationWindow {
         title: qsTr("伺服参数文件保存位置")
         nameFilters: ["ESD files(*.esd)"]
         selectMultiple: false
+        selectExisting:false
         onAccepted: {
             if(slaveSel.currentIndex == -1){
                 return

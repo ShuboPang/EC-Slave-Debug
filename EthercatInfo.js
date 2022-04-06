@@ -16,7 +16,7 @@ var __EthercatSlaveStateEnum={
     16:qsTr("ERROR"),
 }
 
-var huacheng_sod=[
+var huacheng_sdo=[
             {"main_index":0x2e00,"sub_index":1,"type":4,"describe":qsTr("软件版本/恢复出厂"),"unit":qsTr("")},
             {"main_index":0x2e00,"sub_index":2,"type":4,"describe":qsTr("驱动器机型"),"unit":qsTr("")},
             {"main_index":0x2e00,"sub_index":3,"type":4,"describe":qsTr("电机代码"),"unit":qsTr("")},
@@ -222,12 +222,23 @@ var huacheng_sod=[
 
         ]
 
+var yako_sdo=[{"main_index":0x2000,"sub_index":0,"type":2,"describe":qsTr("驱动器版本号"),"unit":qsTr("")},
+              {"main_index":0x2001,"sub_index":0,"type":2,"describe":qsTr("软件版本号"),"unit":qsTr("")},
+              {"main_index":0x2201,"sub_index":0,"type":2,"describe":qsTr("电子齿轮比与细分切换"),"unit":qsTr("")},
+              {"main_index":0x2205,"sub_index":0,"type":2,"describe":qsTr("电机默认方向"),"unit":qsTr("")},
+              {"main_index":0x2400,"sub_index":0,"type":2,"describe":qsTr("细分设置"),"unit":qsTr("")},
+              {"main_index":0x2401,"sub_index":0,"type":2,"describe":qsTr("最大有效电流"),"unit":qsTr("mA")},
+              {"main_index":0x2408,"sub_index":0,"type":2,"describe":qsTr("电子齿轮比分母"),"unit":qsTr("")},
+              {"main_index":0x2409,"sub_index":0,"type":2,"describe":qsTr("电子齿轮比分子"),"unit":qsTr("")},
+              {"main_index":0x603F,"sub_index":0,"type":2,"describe":qsTr("驱动器故障码"),"unit":qsTr("")},
+            ]
+
 
 var __EthercatSlave_huacheng={
     "name":"",
     "eep_man":0x766,
     "eep_id":0x501,
-    "sdo":huacheng_sod,
+    "sdo":huacheng_sdo,
 //    "alarm_addr":{
 //        "main_index":0,
 //        "sub_index":0,
@@ -238,11 +249,31 @@ var __EthercatSlave_huacheng={
 //    }
 }
 
+var __EthercatSlave_yako2405pe={
+    "name":"",
+    "eep_man":0x994,
+    "eep_id":0x2000,
+    "sdo":yako_sdo,
+    "alarm_addr":{
+        "main_index":0x603F,
+        "sub_index":0,
+        "type":2,
+    },
+    "eeprom_addr":{
+        "main_index":0x2102,
+        "sub_index":0,
+        "value":2,
+        "type":2,
+    }
+}
+
+
 
 var __EthercatSlaveDeviceMap=new Map();
 
 var ethercatSlaveDeviceList =[__EthercatSlave_huacheng,
-        ];
+                              __EthercatSlave_yako2405pe,
+                            ];
 
 
 function init() {
@@ -250,13 +281,13 @@ function init() {
         if(ethercatSlaveDeviceList[i].hasOwnProperty("eep_man") && ethercatSlaveDeviceList[i].hasOwnProperty("eep_id")){
             var name = ethercatSlaveDeviceList[i]["eep_man"]+"|"+ethercatSlaveDeviceList[i]["eep_id"]
             __EthercatSlaveDeviceMap.set(name,ethercatSlaveDeviceList[i]);
-            console.log("init name",ethercatSlaveDeviceList[i].name,name);
+//            console.log("init name",ethercatSlaveDeviceList[i].name,name);
         }
     }
 }
 
 function ethercatSlaveDeviceFind(eep_man,eep_id){
     var name = eep_man + "|"+eep_id;
-    console.log("ethercatSlaveDeviceFind name",name,eep_man,eep_id);
+//    console.log("ethercatSlaveDeviceFind name",name,eep_man,eep_id);
     return __EthercatSlaveDeviceMap.get(name);
 }

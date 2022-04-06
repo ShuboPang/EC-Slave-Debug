@@ -185,6 +185,53 @@ ApplicationWindow {
         Button{
             text:qsTr("写EEPROM")
             onClicked: {
+                if(slaveSel.currentIndex == -1){
+                    return;
+                }
+                let slave_info = slaveDeviceListModel.get(slaveSel.currentIndex);
+                var slave = EthercatInfoJs.ethercatSlaveDeviceFind(slave_info.eep_man,slave_info.eep_id)
+                if(slave.hasOwnProperty("eeprom_addr")){
+                    let size = 0;
+                    if(slave.eeprom_addr.type == 2){
+                        size = 1;
+                    }
+                    else if(slave.eeprom_addr.type == 4){
+                        size = 2;
+                    }
+                    let alarm_value = ethercatmaster.writeSdo(slaveSel.currentIndex,slave.eeprom_addr.main_index,slave.eeprom_addr.sub_index,size,slave.eeprom_addr.value)
+                }
+            }
+        }
+
+        Timer{
+            repeat: true
+            running: true
+            interval: 100
+            onTriggered: {
+                if(slaveDeviceListModel.count == 0)
+                    return;
+                for(let i = 0;i<slaveDeviceListModel.count;i++){
+                    let slave_info = slaveDeviceListModel.get(i);
+                    var slave = EthercatInfoJs.ethercatSlaveDeviceFind(slave_info.eep_man,slave_info.eep_id)
+                    slaveDeviceListModel.setProperty(i,"ec_state",ethercatmaster.getSlaveState(i))
+                    if(slave == undefined){
+
+                    }
+                    else{
+                        if(slave.hasOwnProperty("alarm_addr")){
+                            let size = 0;
+                            if(slave.alarm_addr.type == 2){
+                                size = 1;
+                            }
+                            else if(slave.alarm_addr.type == 4){
+                                size = 2;
+                            }
+                            let alarm_value = ethercatmaster.readSdo(i,slave.alarm_addr.main_index,slave.alarm_addr.sub_index,size)
+                            slaveDeviceListModel.setProperty(i,"alarm_value",alarm_value)
+                        }
+                    }
+
+                }
 
             }
         }
@@ -249,6 +296,7 @@ ApplicationWindow {
                         for(let i = 0;i<ethercatmaster.getSlaveCount();i++){
                             var info = ethercatmaster.getSlaveInfo(i);
                             var slaveInfo = JSON.parse(info);
+                            slaveInfo.alarm_value = 0;
                             slaveDeviceListModel.append(slaveInfo)
                         }
                     }
@@ -300,6 +348,17 @@ ApplicationWindow {
                                 horizontalAlignment: Text.AlignHCenter
                                 width: 150
                             }
+                            Rectangle{
+                                width: 1
+                                height: parent.height
+                                color: "black"
+                            }
+                            Text {
+                                text: qsTr("报警码")
+                                anchors.verticalCenter: parent.verticalCenter
+                                horizontalAlignment: Text.AlignHCenter
+                                width: 150
+                            }
                         }
                     }
                     delegate: Rectangle{
@@ -346,6 +405,17 @@ ApplicationWindow {
                             }
                             Text {
                                 text: "0x"+ec_state.toString(16)+"("+EthercatInfoJs.__EthercatSlaveStateEnum[ec_state]+")"
+                                anchors.verticalCenter: parent.verticalCenter
+                                horizontalAlignment: Text.AlignHCenter
+                                width: 150
+                            }
+                            Rectangle{
+                                width: 1
+                                height: parent.height
+                                color: "black"
+                            }
+                            Text {
+                                text: "0x"+alarm_value.toString(16)+"("+alarm_value+")"
                                 anchors.verticalCenter: parent.verticalCenter
                                 horizontalAlignment: Text.AlignHCenter
                                 width: 150
@@ -769,6 +839,8 @@ ApplicationWindow {
             }
             esdfilePage.visible = true;
             esdfilePage.title = fileUrl;
+            esdfileList.eep_id = esd_.eep_id
+            esdfileList.eep_man = esd_.eep_man
         }
     }
     FileDialog{
@@ -812,6 +884,11 @@ ApplicationWindow {
                     if(esdSlaveSel.currentIndex == -1){
                         return ;
                     }
+                    var slave_info = slaveDeviceListModel.get(esdSlaveSel.currentIndex)
+                    if(esdfileList.eep_man != slave_info.eep_man){
+                        dialog.waring(qsTr("伺服参数写入错误"),qsTr("伺服参数配置厂家与目标驱动器厂家不一致！"))
+                        return;
+                    }
 
                     for(let i = 0;i<esdfileListModel.count;i++){
                         let esd_sdo = esdfileListModel.get(i);
@@ -826,7 +903,7 @@ ApplicationWindow {
                         }
                         ethercatmaster.writeSdo(esdSlaveSel.currentIndex,esd_sdo.main_index,esd_sdo.sub_index,size,esd_sdo.value)
                     }
-                     dialog.waring(qsTr("伺服参数写入完成"),qsTr("伺服参数写入完成"))
+                    dialog.waring(qsTr("伺服参数写入完成"),qsTr("伺服参数写入完成"))
                 }
             }
             Button{
@@ -846,6 +923,9 @@ ApplicationWindow {
             anchors.top: esdOptionHeader.bottom
             anchors.topMargin:10
             clip: true
+
+            property int eep_man: 0
+            property int eep_id: 0
             header: Rectangle{
                 width: parent.width
                 height: 30

@@ -338,19 +338,19 @@ qint32 EthercatMaster::readSdo(quint32 slave_id,quint32 main_index,quint32 sub_i
     if(size == 0){
         rdl = sizeof (u8);
         wkc = ec_SDOread(slave_id, main_index, sub_index, FALSE, &rdl, &u8, EC_TIMEOUTRXM);
-        qDebug("readSdo8 %d %d %d %d %d %d",slave_id,main_index,sub_index,rdl,u8,wkc);
+//        qDebug("readSdo8 %d %d %d %d %d %d",slave_id,main_index,sub_index,rdl,u8,wkc);
         return u8;
     }
     else if(size == 1){
         rdl = sizeof (u16);
         wkc = ec_SDOread(slave_id, main_index, sub_index, FALSE, &rdl, &u16, EC_TIMEOUTRXM);
-        qDebug("readSdo16 %d %d %d %d %d %d",slave_id,main_index,sub_index,rdl,u16,wkc);
+//        qDebug("readSdo16 %d %d %d %d %d %d",slave_id,main_index,sub_index,rdl,u16,wkc);
         return u16;
     }
     else if(size == 2){
         rdl = sizeof (u32);
         wkc = ec_SDOread(slave_id, main_index, sub_index, FALSE, &rdl, &u32, EC_TIMEOUTRXM);
-        qDebug("readSdo32 %d %d %d %d %d %d",slave_id,main_index,sub_index,rdl,u32,wkc);
+//        qDebug("readSdo32 %d %d %d %d %d %d",slave_id,main_index,sub_index,rdl,u32,wkc);
         return u32;
     }
     return 0;

@@ -546,7 +546,7 @@ int ecx_writestate(ecx_contextt *context, uint16 slave);
 
 int ec_writealias2(int slave, int alias);
 int eeprom_writealias(int slave, int alias, uint16 crc);
-
+int ec_read_sii_infomation(int slave,char* out);
 int ecx_writealias(ecx_contextt *context, uint16 slave);
 uint16 ecx_statecheck(ecx_contextt *context, uint16 slave, uint16 reqstate, int timeout);
 int ecx_mbxempty(ecx_contextt *context, uint16 slave, int timeout);

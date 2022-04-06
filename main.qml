@@ -134,6 +134,7 @@ ApplicationWindow {
             onCurrentIndexChanged: {
                 var slaveinfo = slaveDeviceListModel.get(slaveSel.currentIndex)
                 slaveAllInfo.text = JSON.stringify(slaveinfo,null,2);
+                slaveSiiInfo.text = ethercatmaster.readSII(slaveSel.currentIndex)
                 // 载入对象字典
                 slaveObjectDictionaryListModel.clear()
                 var slave_ = EthercatInfoJs.ethercatSlaveDeviceFind(slaveinfo.eep_man,slaveinfo.eep_id);
@@ -811,10 +812,32 @@ ApplicationWindow {
                         }
                     }
                 }
-                Text {
-                    id:slaveAllInfo
-                    width: parent.parent.width
+                Row{
+                    Text {
+                        id:slaveAllInfo
+                        width: 400
+                    }
+                    Rectangle{
+                        width: 400
+                        height: 500
+                        border.width: 1
+                        border.color: "black"
+                        Text {
+                            id: slaveSiiInfoName
+                            text: qsTr("SII 信息:")
+                            x:10
+                            y:10
+                        }
+                        Text {
+                            id: slaveSiiInfo
+                            anchors.top:slaveSiiInfoName.bottom
+                            anchors.left: slaveSiiInfoName.left
+                            anchors.topMargin: 10
+                        }
+                    }
+
                 }
+
             }
 
         }

@@ -88,6 +88,8 @@ public:
 
     Q_INVOKABLE qint32 writeFile(const QString& path,const QString& text);
 
+    Q_INVOKABLE QString readSII(quint32 slave_id);
+
 
 private:
     boolean printSDO = FALSE;

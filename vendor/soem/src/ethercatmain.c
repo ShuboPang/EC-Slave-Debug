@@ -990,7 +990,26 @@ int ec_writealias2(int slave, int alias){
     }
 }
 
+int ec_read_sii_infomation(int slave,char* out){
+    eeprom_read(slave, 0x0000, MINBUF); // read first 128 bytes
 
+    uint16 *wbuf = (uint16 *)&ebuf[0];
+    sprintf(out+strlen(out)," PDI Control      : %4.4X\n",*(wbuf + 0x00));
+    sprintf(out+strlen(out)," PDI Config       : %4.4X\n",*(wbuf + 0x01));
+    sprintf(out+strlen(out)," Config Alias     : %4.4X\n",*(wbuf + 0x04));
+    sprintf(out+strlen(out)," Checksum         : %4.4X\n",*(wbuf + 0x07));
+    sprintf(out+strlen(out)," Calculated       : %4.4X\n",SIIcrc(&ebuf[0]));
+    sprintf(out+strlen(out)," Vendor ID        : %8.8X\n",*(uint32 *)(wbuf + 0x08));
+    sprintf(out+strlen(out)," Product Code     : %8.8X\n",*(uint32 *)(wbuf + 0x0A));
+    sprintf(out+strlen(out)," Revision Number  : %8.8X\n",*(uint32 *)(wbuf + 0x0C));
+    sprintf(out+strlen(out)," Serial Number    : %8.8X\n",*(uint32 *)(wbuf + 0x0E));
+    sprintf(out+strlen(out)," Mailbox Protocol : %4.4X\n",*(wbuf + 0x1C));
+    int esize = (*(wbuf + 0x3E) + 1) * 128;
+    if (esize > MAXBUF) esize = MAXBUF;
+    sprintf(out+strlen(out)," Size             : %4.4X = %d bytes\n",*(wbuf + 0x3E), esize);
+    sprintf(out+strlen(out)," Version          : %4.4X\n",*(wbuf + 0x3F));
+    return 0;
+}
 
 //int eeprom_writealias(int slave, int alias)
 //{

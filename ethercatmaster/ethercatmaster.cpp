@@ -425,3 +425,10 @@ qint32 EthercatMaster::writeFile(const QString& path,const QString& text){
     }
     return 0;
 }
+
+QString EthercatMaster::readSII(quint32 slave_id){
+    char out[1024]={0};
+    memset(out,0,sizeof (out));
+    ec_read_sii_infomation(slave_id+1,out);
+    return QString(out);
+}

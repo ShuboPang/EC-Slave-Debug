@@ -1184,8 +1184,9 @@ ApplicationWindow {
                     if(siiSlaveSel.currentIndex == -1){
                         return;
                     }
-                    var sii_ = siiDeviceListModel.get(siiSlaveSel.currentIndex);
-                    ethercatmaster.writeAlias(i,sii_.aliasadr);
+                    var sii_ = siiDeviceListModel.get(siiDeviceList.currentIndex);
+                    ethercatmaster.writeAlias(siiSlaveSel.currentIndex,sii_.aliasadr);
+                    dialog.waring("SII写入成功",qsTr("SII写入完成"))
                 }
             }
             Button{

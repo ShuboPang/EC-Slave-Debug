@@ -215,6 +215,7 @@ ApplicationWindow {
                     }
                     let alarm_value = ethercatmaster.writeSdo(slaveSel.currentIndex,slave.eeprom_addr.main_index,slave.eeprom_addr.sub_index,size,slave.eeprom_addr.value)
                 }
+                dialog.waring(qsTr("伺服EEPROM写入完成"),qsTr("伺服EEPROM写入完成"))
             }
         }
 
@@ -994,7 +995,22 @@ ApplicationWindow {
             Button{
                 text:qsTr("写EEPROM")
                 onClicked: {
-
+                    if(esdSlaveSel.currentIndex == -1){
+                        return;
+                    }
+                    let slave_info = slaveDeviceListModel.get(esdSlaveSel.currentIndex);
+                    var slave = EthercatInfoJs.ethercatSlaveDeviceFind(slave_info.eep_man,slave_info.eep_id)
+                    if(slave.hasOwnProperty("eeprom_addr")){
+                        let size = 0;
+                        if(slave.eeprom_addr.type == 2){
+                            size = 1;
+                        }
+                        else if(slave.eeprom_addr.type == 4){
+                            size = 2;
+                        }
+                        let alarm_value = ethercatmaster.writeSdo(esdSlaveSel.currentIndex,slave.eeprom_addr.main_index,slave.eeprom_addr.sub_index,size,slave.eeprom_addr.value)
+                    }
+                    dialog.waring(qsTr("伺服EEPROM写入完成"),qsTr("伺服EEPROM写入完成"))
                 }
             }
         }

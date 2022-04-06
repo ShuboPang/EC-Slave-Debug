@@ -305,6 +305,9 @@ ApplicationWindow {
                     height: parent.height
 
                     clip: true
+                    ScrollBar.vertical:ScrollBar{
+
+                    }
 
                     function refreshSlaveState(){
                          slaveDeviceListModel.clear()
@@ -594,6 +597,7 @@ ApplicationWindow {
                 width: parent.parent.width
                 height: parent.parent.height
                 clip: true
+
                 header: Rectangle{
                     width: parent.width
                     height: 30
@@ -790,6 +794,10 @@ ApplicationWindow {
                             slaveObjectDictionaryListModel.setProperty(index,"value",value);
                         }
                     }
+                }
+
+                ScrollBar.vertical:ScrollBar{
+
                 }
             }
         }
@@ -1000,7 +1008,9 @@ ApplicationWindow {
             anchors.top: esdOptionHeader.bottom
             anchors.topMargin:10
             clip: true
+            ScrollBar.vertical:ScrollBar{
 
+            }
             property int eep_man: 0
             property int eep_id: 0
             header: Rectangle{
@@ -1223,7 +1233,9 @@ ApplicationWindow {
                 height: parent.height
 
                 clip: true
+                ScrollBar.vertical:ScrollBar{
 
+                }
                 header:Rectangle{
                     width: parent.width
                     height: 30

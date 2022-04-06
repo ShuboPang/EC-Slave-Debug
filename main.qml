@@ -15,13 +15,13 @@ ApplicationWindow {
     title: qsTr("EC-Slave-Debug")
     menuBar: MenuBar{
             Menu {
-                 title: qsTr("&文件")
-                 Action { text: qsTr("&打开...")
+                 title: qsTr("&伺服参数")
+                 Action { text: qsTr("&打开伺服参数文件...")
                     onTriggered: {
                         openFileDialog.visible = true;
                     }
                  }
-                 Action { text: qsTr("&保存")
+                 Action { text: qsTr("&保存伺服参数")
                     onTriggered: {
                         outputFileDialog.visible = true;
                     }
@@ -35,6 +35,19 @@ ApplicationWindow {
                      }
                  }
              }
+            Menu {
+                 title: qsTr("&SII")
+                 Action { text: qsTr("&打开SII文件...")
+                    onTriggered: {
+                        openFileDialog_alias.visible = true;
+                    }
+                 }
+                 Action { text: qsTr("&保存SII")
+                    onTriggered: {
+                        outputFileDialog_alias.visible = true;
+                    }
+                 }
+            }
             Menu {
                  title: qsTr("&脚本")
                  Action {
@@ -119,6 +132,7 @@ ApplicationWindow {
                 slaveDeviceList.refreshSlaveState()
                 slaveSel.model = ethercatmaster.getSlaveNameList();
                 esdSlaveSel.model = ethercatmaster.getSlaveNameList();
+                siiSlaveSel.model = ethercatmaster.getSlaveNameList();
                 console.log("ethermaster.getSlaveNameList()",ethercatmaster.getSlaveNameList())
             }
         }
@@ -889,6 +903,46 @@ ApplicationWindow {
         }
     }
 
+    FileDialog{
+        id: openFileDialog_alias
+        title: qsTr("伺服SII文件位置")
+        nameFilters: [ "ESI files(*.esi)"]
+
+        onAccepted: {
+            siiDeviceListModel.clear()
+            siiPage.title = qsTr("SII ")+fileUrl
+            var esi = ethercatmaster.readFile(fileUrl);
+            if(esi.length == 0){
+                return;
+            }
+            var esi_ = JSON.parse(esi);
+
+            for(let i = 0;i<esi_.length;i++){
+                siiDeviceListModel.append(esi_[i])
+            }
+            siiPage.visible = true
+        }
+    }
+    FileDialog{
+        id: outputFileDialog_alias
+        title: qsTr("伺服SII文件保存位置")
+        nameFilters: ["ESI files(*.esi)"]
+        selectMultiple: false
+        selectExisting:false
+        onAccepted: {
+            var info=[]
+            for(var i = 0;i<slaveDeviceListModel.count;i++){
+                let slaveInfo = slaveDeviceListModel.get(i)
+                info.push(slaveInfo)
+            }
+            ethercatmaster.writeFile(fileUrl,JSON.stringify(info,null,2))
+            dialog.waring(qsTr("伺服SII文件导出完成"),qsTr("伺服SII文件导出完成"))
+        }
+        Component.onCompleted: {
+
+        }
+    }
+
     Window{
         id:esdfilePage
         visible: false
@@ -1112,7 +1166,149 @@ ApplicationWindow {
         }
     }
 
+    Window{
+        id:siiPage
+        width: 800
+        height: 600
+        visible: false;
+        Row{
+            id:siiHeader
+            spacing: 10
+            ComboBox{
+                id:siiSlaveSel
+                width: 300
+            }
+            Button{
+                text: qsTr("单轴写SII")
+                onClicked: {
+                    if(siiSlaveSel.currentIndex == -1){
+                        return;
+                    }
+                    var sii_ = siiDeviceListModel.get(siiSlaveSel.currentIndex);
+                    ethercatmaster.writeAlias(i,sii_.aliasadr);
+                }
+            }
+            Button{
+                text: qsTr("全部写SII")
+                onClicked: {
+                    var err = qsTr("从站 ")
+                    if(siiDeviceListModel.count != slaveDeviceListModel.count){
+                        dialog.waring("SII写入错误",qsTr("当前从站个数与SII文件中从站个数不一致"))
+                        return;
+                    }
+                    for(let i = 0;i<siiDeviceListModel.count;i++){
+                        var sii_ = siiDeviceListModel.get(i);
+                        ethercatmaster.writeAlias(i,sii_.aliasadr);
+                    }
+                    dialog.waring("SII写入成功",qsTr("SII写入完成"))
+                }
+            }
+        }
+        Rectangle{
+            id:siiDeviceListPage
+            height: parent.height - siiHeader.height - 10
+            width:  parent.width
+            border.color: "gray"
+            border.width: 1
+            anchors.top:siiHeader.bottom
+            anchors.topMargin: 10
 
+            ListView{
+                id:siiDeviceList
+                model: ListModel{
+                    id:siiDeviceListModel
+                }
+                width: parent.width
+                height: parent.height
+
+                clip: true
+
+                header:Rectangle{
+                    width: parent.width
+                    height: 30
+                    border.color: "black"
+                    border.width: 1
+                    Row{
+                        spacing: 3
+                        height: parent.height
+                        Text {
+                            text: qsTr("从站名字")
+                            anchors.verticalCenter: parent.verticalCenter
+                            horizontalAlignment: Text.AlignHCenter
+                            width: 450
+                        }
+                        Rectangle{
+                            width: 1
+                            height: parent.height
+                            color: "black"
+                        }
+                        Text {
+                            text: qsTr("厂家ID")
+                            anchors.verticalCenter: parent.verticalCenter
+                            horizontalAlignment: Text.AlignHCenter
+                            width: 90
+                        }
+                        Rectangle{
+                            width: 1
+                            height: parent.height
+                            color: "black"
+                        }
+                        Text {
+                            text: qsTr("产品ID")
+                            anchors.verticalCenter: parent.verticalCenter
+                            horizontalAlignment: Text.AlignHCenter
+                            width: 90
+                        }
+                    }
+                }
+                delegate: Rectangle{
+                    width: parent.width
+                    height: 30
+                    border.color: "black"
+                    border.width: 1
+                    color: siiDeviceList.currentIndex == index?"gray":"white"
+                    Row{
+                        spacing: 3
+                        height: parent.height
+                        Text {
+                            text: index+"   "+aliasadr+":"+SIIindex+" "+name
+                            anchors.verticalCenter: parent.verticalCenter
+                            horizontalAlignment: Text.AlignHCenter
+                            width: 450
+                        }
+                        Rectangle{
+                            width: 1
+                            height: parent.height
+                            color: "black"
+                        }
+                        Text {
+                            text: "0x"+eep_man.toString(16)
+                            anchors.verticalCenter: parent.verticalCenter
+                            horizontalAlignment: Text.AlignRight
+                            width: 90
+                        }
+                        Rectangle{
+                            width: 1
+                            height: parent.height
+                            color: "black"
+                        }
+                        Text {
+                            text: "0x"+eep_id.toString(16)
+                            anchors.verticalCenter: parent.verticalCenter
+                            horizontalAlignment: Text.AlignRight
+                            width: 90
+                        }
+                    }
+                    MouseArea{
+                        anchors.fill: parent
+                        onClicked: {
+                            siiDeviceList.currentIndex = index;
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     Dialog{
         id:dialog

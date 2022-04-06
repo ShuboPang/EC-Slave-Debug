@@ -249,10 +249,57 @@ var __EthercatSlave_huacheng={
 //    }
 }
 
+var __EthercatSlave_huacheng402={
+    "name":"",
+    "eep_man":0x92b,
+    "eep_id":0x402,
+    "sdo":huacheng_sdo,
+//    "alarm_addr":{
+//        "main_index":0,
+//        "sub_index":0,
+//    },
+//    "eeprom_addr":{
+//        "main_index":0,
+//        "sub_index":0,
+//    }
+}
+var __EthercatSlave_huacheng3000_402={
+    "name":"",
+    "eep_man":0x92b,
+    "eep_id":0x502,
+    "sdo":huacheng_sdo,
+//    "alarm_addr":{
+//        "main_index":0,
+//        "sub_index":0,
+//    },
+//    "eeprom_addr":{
+//        "main_index":0,
+//        "sub_index":0,
+//    }
+}
+
 var __EthercatSlave_yako2405pe={
     "name":"",
     "eep_man":0x994,
     "eep_id":0x2000,
+    "sdo":yako_sdo,
+    "alarm_addr":{
+        "main_index":0x603F,
+        "sub_index":0,
+        "type":2,
+    },
+    "eeprom_addr":{
+        "main_index":0x2102,
+        "sub_index":0,
+        "value":2,
+        "type":2,
+    }
+}
+
+var __EthercatSlave_yako2205pe={
+    "name":"",
+    "eep_man":0x994,
+    "eep_id":0x3000,
     "sdo":yako_sdo,
     "alarm_addr":{
         "main_index":0x603F,
@@ -273,6 +320,9 @@ var __EthercatSlaveDeviceMap=new Map();
 
 var ethercatSlaveDeviceList =[__EthercatSlave_huacheng,
                               __EthercatSlave_yako2405pe,
+                              __EthercatSlave_yako2205pe,
+                              __EthercatSlave_huacheng402,
+                              __EthercatSlave_huacheng3000_402,
                             ];
 
 

@@ -386,12 +386,14 @@ qint32 EthercatMaster::writeSdo(quint32 slave_id,quint32 main_index,quint32 sub_
 
 qint32 EthercatMaster::writeAlias(quint32 slave_id,quint32 alias_id){
     ++slave_id;
-    wkc = 0;
-    ec_slavet* slave = &ec_slave[slave_id];
-    slave->aliasadr = alias_id;
-    wkc = ec_writealias(slave_id);
+//    wkc = 0;
+//    ec_slavet* slave = &ec_slave[slave_id];
+//    slave->aliasadr = alias_id;
+//    wkc = ec_writealias(slave_id);
 
-    qDebug("writeAlias slave_id = %d ,alias_id = %d ,ret = %d ",slave_id,alias_id,wkc);
+//    qDebug("writeAlias slave_id = %d ,alias_id = %d ,ret = %d ",slave_id,alias_id,wkc);
+
+    ec_writealias2(slave_id,alias_id);
     return wkc;
 }
 

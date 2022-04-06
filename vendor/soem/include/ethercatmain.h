@@ -542,6 +542,11 @@ uint16 ecx_siiSMnext(ecx_contextt *context, uint16 slave, ec_eepromSMt* SM, uint
 int ecx_siiPDO(ecx_contextt *context, uint16 slave, ec_eepromPDOt* PDO, uint8 t);
 int ecx_readstate(ecx_contextt *context);
 int ecx_writestate(ecx_contextt *context, uint16 slave);
+//int eeprom_writealias(int slave, int alias);
+
+int ec_writealias2(int slave, int alias);
+int eeprom_writealias(int slave, int alias, uint16 crc);
+
 int ecx_writealias(ecx_contextt *context, uint16 slave);
 uint16 ecx_statecheck(ecx_contextt *context, uint16 slave, uint16 reqstate, int timeout);
 int ecx_mbxempty(ecx_contextt *context, uint16 slave, int timeout);

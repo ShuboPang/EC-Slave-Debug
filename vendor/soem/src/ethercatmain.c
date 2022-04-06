@@ -822,6 +822,199 @@ int ecx_writestate(ecx_contextt *context, uint16 slave)
    return 0;
 }
 
+
+
+int eeprom_writealias(int slave, int alias, uint16 crc)
+{
+    uint16 aiadr;
+    uint8 eepctl;
+    int ret;
+
+    if((ec_slavecount >= slave) && (slave > 0) && (alias <= 0xffff))
+    {
+        aiadr = 1 - slave;
+        eepctl = 2;
+        ec_APWR(aiadr, ECT_REG_EEPCFG, sizeof(eepctl), &eepctl , EC_TIMEOUTRET); /* force Eeprom from PDI */
+        eepctl = 0;
+        ec_APWR(aiadr, ECT_REG_EEPCFG, sizeof(eepctl), &eepctl , EC_TIMEOUTRET); /* set Eeprom to master */
+
+        ret = ec_writeeepromAP(aiadr, 0x04 , alias, EC_TIMEOUTEEP);
+        if (ret)
+            ret = ec_writeeepromAP(aiadr, 0x07 , crc, EC_TIMEOUTEEP);
+
+        return ret;
+    }
+
+    return 0;
+}
+
+
+#define MAXBUF 32768
+#define STDBUF 2048
+#define MINBUF 128
+#define CRCBUF 14
+uint8 ebuf[MAXBUF];
+
+void calc_crc(uint8 *crc, uint8 b)
+{
+    int j;
+    *crc ^= b;
+    for(j = 0; j <= 7 ; j++ )
+    {
+        if(*crc & 0x80)
+            *crc = (*crc << 1) ^ 0x07;
+        else
+            *crc = (*crc << 1);
+    }
+}
+
+uint16 SIIcrc(uint8 *buf)
+{
+    int i;
+   uint8 crc;
+
+    crc = 0xff;
+   for( i = 0 ; i <= 13 ; i++ )
+    {
+        calc_crc(&crc , *(buf++));
+   }
+   return (uint16)crc;
+}
+
+int eeprom_read(int slave, int start, int length)
+{
+    int i, ainc = 4;
+    uint16 estat, aiadr;
+    uint32 b4;
+    uint64 b8;
+    uint8 eepctl;
+
+    if((ec_slavecount >= slave) && (slave > 0) && ((start + length) <= MAXBUF))
+    {
+        aiadr = 1 - slave;
+        eepctl = 2;
+        ec_APWR(aiadr, ECT_REG_EEPCFG, sizeof(eepctl), &eepctl , EC_TIMEOUTRET); /* force Eeprom from PDI */
+        eepctl = 0;
+        ec_APWR(aiadr, ECT_REG_EEPCFG, sizeof(eepctl), &eepctl , EC_TIMEOUTRET); /* set Eeprom to master */
+
+        estat = 0x0000;
+        aiadr = 1 - slave;
+        ec_APRD(aiadr, ECT_REG_EEPSTAT, sizeof(estat), &estat, EC_TIMEOUTRET); /* read eeprom status */
+        estat = etohs(estat);
+        if (estat & EC_ESTAT_R64)
+        {
+            ainc = 8;
+            for (i = start ; i < (start + length) ; i+=ainc)
+            {
+                b8 = ec_readeepromAP(aiadr, i >> 1 , EC_TIMEOUTEEP);
+                ebuf[i] = b8;
+                ebuf[i+1] = b8 >> 8;
+                ebuf[i+2] = b8 >> 16;
+                ebuf[i+3] = b8 >> 24;
+                ebuf[i+4] = b8 >> 32;
+                ebuf[i+5] = b8 >> 40;
+                ebuf[i+6] = b8 >> 48;
+                ebuf[i+7] = b8 >> 56;
+            }
+        }
+        else
+        {
+            for (i = start ; i < (start + length) ; i+=ainc)
+            {
+                b4 = ec_readeepromAP(aiadr, i >> 1 , EC_TIMEOUTEEP);
+                ebuf[i] = b4;
+                ebuf[i+1] = b4 >> 8;
+                ebuf[i+2] = b4 >> 16;
+                ebuf[i+3] = b4 >> 24;
+            }
+        }
+
+        return 1;
+    }
+
+    return 0;
+}
+
+int eeprom_write(int slave, int start, int length)
+{
+    int i, dc = 0;
+    uint16 aiadr, *wbuf;
+    uint8 eepctl;
+    if((ec_slavecount >= slave) && (slave > 0) && ((start + length) <= MAXBUF))
+    {
+        aiadr = 1 - slave;
+        eepctl = 2;
+        ec_APWR(aiadr, ECT_REG_EEPCFG, sizeof(eepctl), &eepctl , EC_TIMEOUTRET); /* force Eeprom from PDI */
+        eepctl = 0;
+        ec_APWR(aiadr, ECT_REG_EEPCFG, sizeof(eepctl), &eepctl , EC_TIMEOUTRET); /* set Eeprom to master */
+
+        aiadr = 1 - slave;
+        wbuf = (uint16 *)&ebuf[0];
+        for (i = start ; i < (start + length) ; i+=2)
+        {
+            ec_writeeepromAP(aiadr, i >> 1 , *(wbuf + (i >> 1)), EC_TIMEOUTEEP);
+            if (++dc >= 100)
+            {
+                dc = 0;
+                printf(".");
+                fflush(stdout);
+            }
+        }
+
+        return 1;
+    }
+
+    return 0;
+}
+
+
+int ec_writealias2(int slave, int alias){
+
+    uint16 *wbuf;
+    if( eeprom_read(slave, 0x0000, CRCBUF) ) // read first 14 bytes
+    {
+        wbuf = (uint16 *)&ebuf[0];
+        *(wbuf + 0x04) = alias;
+        if(eeprom_writealias(slave, alias, SIIcrc(&ebuf[0])))
+        {
+            printf("Alias %4.4X written successfully to slave %d\n", alias, slave);
+        }
+                  else
+        {
+            printf("Alias not written\n");
+        }
+    }
+               else
+    {
+        printf("Could not read slave EEPROM");
+    }
+}
+
+
+
+//int eeprom_writealias(int slave, int alias)
+//{
+//    int i, wkc, dc = 0;
+//    uint16 aiadr, *wbuf;
+//    uint8 eepctl;
+//    int ret;
+
+//    if((ec_slavecount >= slave) && (slave > 0) && (alias <= 0xffff))
+//    {
+//        aiadr = 1 - slave;
+//        eepctl = 2;
+//        wkc = ec_APWR(aiadr, ECT_REG_EEPCFG, sizeof(eepctl), &eepctl , EC_TIMEOUTRET); /* force Eeprom from PDI */
+//        eepctl = 0;
+//        wkc = ec_APWR(aiadr, ECT_REG_EEPCFG, sizeof(eepctl), &eepctl , EC_TIMEOUTRET); /* set Eeprom to master */
+
+//        ret = ec_writeeepromAP(aiadr, 0x04 , alias, EC_TIMEOUTEEP);
+
+//        return ret;
+//    }
+
+//    return 0;
+//}
+
 int ecx_writealias(ecx_contextt *context, uint16 slave)
 {
     uint16 configadr, slstate;
@@ -835,8 +1028,9 @@ int ecx_writealias(ecx_contextt *context, uint16 slave)
     {
         configadr = context->slavelist[slave].configadr;
 
-//        printf("configadr = %d %x %d \n",configadr,ECT_REG_ALIAS,htoes(context->slavelist[slave].aliasadr));
-        return ecx_FPWRw(context->port, configadr, ECT_REG_ALIAS, htoes(context->slavelist[slave].aliasadr), EC_TIMEOUTRET3); /* write slave alias */
+        printf("configadr = %d %x %d \n",configadr,ECT_REG_ALIAS,htoes(context->slavelist[slave].aliasadr));
+        return ecx_writeeepromFP(context,configadr,4,htoes(context->slavelist[slave].aliasadr),EC_TIMEOUTRET3);
+//        return ecx_FPWRw(context->port, configadr, ECT_REG_ALIAS, htoes(context->slavelist[slave].aliasadr), EC_TIMEOUTRET3); /* write slave alias */
     }
     return 0;
 }
@@ -1512,6 +1706,7 @@ int ecx_writeeepromFP(ecx_contextt *context, uint16 configadr, uint16 eeproma, u
             wkc = ecx_FPWR(context->port, configadr, ECT_REG_EEPDAT, sizeof(data), &data, EC_TIMEOUTRET);
          }
          while ((wkc <= 0) && (cnt++ < EC_DEFAULTRETRIES));
+         printf("ecx_writeeepromFP 508 wkc = %d\n",wkc);
          ed.comm = EC_ECMD_WRITE;
          ed.addr = eeproma;
          ed.d2   = 0x0000;
@@ -1539,6 +1734,7 @@ int ecx_writeeepromFP(ecx_contextt *context, uint16 configadr, uint16 eeproma, u
                }
             }
          }
+         printf("ecx_writeeepromFP wkc = %d\n",wkc);
       }
       while ((nackcnt > 0) && (nackcnt < 3));
    }

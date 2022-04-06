@@ -12,7 +12,7 @@ ApplicationWindow {
     width: 1280
     height:768
     visible: true
-    title: qsTr("EC-Slave-Debug")
+    title: qsTr("EC-Slave-Debug")+"1.0.0"
     menuBar: MenuBar{
             Menu {
                  title: qsTr("&伺服参数")

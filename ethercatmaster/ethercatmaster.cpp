@@ -10,7 +10,7 @@
 #include <QCoreApplication>
 
 #include "ethercatservobase.h"
-#include "axismotion.h"
+
 
 #define EC_TIMEOUTMON 500
 
@@ -43,7 +43,13 @@ void CALLBACK RTthread(UINT uTimerID, UINT uMsg, DWORD_PTR dwUser, DWORD_PTR dw1
         if(ethercat_servo_map.contains(i)){
             const _EthercatSlaveConfig* slave_config = ethercat_servo_map.value(i);
             if(slave_config!=NULL){
-                slave_config->cycle_run(&(ec_slave[i]));
+                if(ethercat_servo_axis_map.contains(i)){
+                    QVector<AxisMotion*> axis_motion = ethercat_servo_axis_map.value(i);
+                    for(int j = 0;j<axis_motion.length();j++){
+                        axis_motion.at(j)->CycleRun();
+                        slave_config->cycle_run(&(ec_slave[i]),axis_motion.at(j),j);
+                    }
+                }
             }
         }
     }
@@ -226,7 +232,7 @@ qint32 EthercatMaster::init(quint32 network_id){
             }
 
             ec_config_map(&IOmap);
-//            ec_configdc();
+            ec_configdc();
             IOmap16 = (int16_t*)IOmap;
             qDebug("Slaves mapped, state to SAFE_OP.\n");
             /* wait for all slaves to reach SAFE_OP state */
@@ -306,7 +312,15 @@ Q_INVOKABLE void EthercatMaster::ecClose(){
     if(mmResult){
         timeKillEvent(mmResult);
     }
-
+    QMap<int,QVector<AxisMotion*>>::const_iterator  it = ethercat_servo_axis_map.begin();
+    while(it != ethercat_servo_axis_map.end()){
+        QVector<AxisMotion*> axis_motion = it.value();
+        for(int i = 0;i<axis_motion.length();i++){
+            delete  axis_motion.at(i);
+        }
+        axis_motion.clear();
+    }
+    ethercat_servo_axis_map.clear();
     ec_close();
 }
 
@@ -499,6 +513,117 @@ QString EthercatMaster::readSII(quint32 slave_id){
     return QString(out);
 }
 
+
+qint32 EthercatMaster::updateSlaveFirm(quint32 slave_id,const QString path){
+    ++slave_id;
+    int offset = 0;
+    int buffSize = 2048;
+
+
+    QString str = path;
+    str = str.mid(8);
+    QFile file(str);
+    QByteArray byte_array;
+    if(file.open(QFile::ReadOnly)){
+        byte_array = file.readAll();
+    }
+    else{
+        qDebug()<<path<<"readFile open failed";
+        return -1;
+    }
+
+    uint8_t value[5] = {3,0,0,0,0};
+    uint8_t data[2048] = {0};
+    uint8_t data_addr[4] = {0};
+    int32 rdl = sizeof(value);
+
+    while (1) {
+        qDebug()<<"Wait to enter update start:"<<byte_array.length();
+
+        ec_SDOwrite(slave_id, 0x5000, 1, FALSE, sizeof (value), value, EC_TIMEOUTRXM);
+
+        value[0] = 0;
+        ec_SDOread(slave_id, 0x5000, 1, FALSE, &rdl, value, EC_TIMEOUTRXM);
+
+        if(value[0]  == 3){
+            while (1) {
+                value[0] = 0x55;
+                value[1] = 0;
+                ec_SDOwrite(slave_id, 0x5000, 1, FALSE, sizeof (value), value, EC_TIMEOUTRXM);
+                int sec_count = byte_array.length() / (64 * 1024) + 1;
+                qDebug()<<"use blcok count:"<<sec_count;
+                for (int i = 0; i < sec_count;++i) {
+                    value[0] = 0x56;
+                    value[1] = 0;
+                    value[2] = i;
+                    value[3] = 1;
+                    ec_SDOwrite(slave_id, 0x5000, 1, FALSE, sizeof (value), value, EC_TIMEOUTRXM);
+                }
+                ec_SDOread(slave_id, 0x5000, 1, FALSE, &rdl, value, EC_TIMEOUTRXM);
+                if (value[0] == 0) {
+                    break;
+                }
+            }
+            qDebug() << "Entered update process!";
+            break;
+        }
+    }
+    int sent_count = (byte_array.length() - offset) / buffSize;
+    int last_sent = (byte_array.length() - offset) % buffSize;
+    char *fp = byte_array.data() + offset;
+    qDebug()<<"sent info:"<<sent_count<<" mod:"<<last_sent;
+    for (int i = 0; i < sent_count; ++i) {
+//        qDebug()<<setw(5)<<i<<"/"<<sent_count;
+        ec_SDOread(slave_id, 0x5000, 1, FALSE, &rdl, value, EC_TIMEOUTRXM);
+        if (value[0] == 0) {
+            data_addr[0] = i & 0xFF;
+            data_addr[1] = (i >> 8) & 0xFF;
+//            m.sdoDownload(&data_addr);
+            ec_SDOwrite(slave_id, 0x5000, 2, FALSE, sizeof (data_addr), data_addr, EC_TIMEOUTRXM);      //< 写数据地址
+
+             memcpy(data, fp,buffSize);
+//            m.sdoDownload(&data);
+            ec_SDOwrite(slave_id, 0x5000, 0, FALSE, sizeof (data), data, EC_TIMEOUTRXM);      //< 写数据
+
+
+//            m.sdoDownload(&write_can_sent_flag);
+            value[0] = 1;
+            value[1] = 0;
+            ec_SDOwrite(slave_id, 0x5000, 1, FALSE, sizeof (value), value, EC_TIMEOUTRXM);
+
+            fp += buffSize;
+
+        }
+        else
+        {
+            //          --i;
+        }
+    }
+
+    ec_SDOread(slave_id, 0x5000, 1, FALSE, &rdl, value, EC_TIMEOUTRXM);
+    if (value[0] == 0) {
+        data_addr[0] = sent_count & 0xFF;
+        data_addr[1] = (sent_count >> 8) & 0xFF;
+        ec_SDOwrite(slave_id, 0x5000, 2, FALSE, sizeof (data_addr), data_addr, EC_TIMEOUTRXM);      //< 写数据地址
+
+        memcpy(data, fp,buffSize);
+        ec_SDOwrite(slave_id, 0x5000, 0, FALSE, sizeof (data), data, EC_TIMEOUTRXM);      //< 写数据
+
+        value[0] = 1;
+        value[1] = 0;
+        ec_SDOwrite(slave_id, 0x5000, 1, FALSE, sizeof (value), value, EC_TIMEOUTRXM);
+    }
+    else
+    {
+        //      --i;
+    }
+
+    value[0] = 2;
+    value[1] = 0;
+    ec_SDOwrite(slave_id, 0x5000, 1, FALSE, sizeof (value), value, EC_TIMEOUTRXM);
+    return 0;
+}
+
 void EthercatMaster::clearServoAlarm(quint32 slave_id,quint32 sub_id){
      ++slave_id;
     ec_slavet* slave = &ec_slave[slave_id];
@@ -570,3 +695,36 @@ qint32 EthercatMaster::getServoCmdPos(quint32 slave_id,quint32 sub_id){
     }
     return 0;
 }
+
+
+AxisMotion* EthercatMaster::getMotionAxis(quint32 slave_id,quint32 sub_id){
+    ++slave_id;
+    if(ethercat_servo_axis_map.contains(slave_id)){
+        QVector<AxisMotion*> axis_motion = ethercat_servo_axis_map.value(slave_id);
+        if(sub_id < axis_motion.length()){
+            return axis_motion.at(sub_id);
+        }
+    }
+    return NULL;
+}
+
+
+qint32 EthercatMaster::setAxisJog(quint32 slave_id,quint32 sub_id,qint32 speed){
+    AxisMotion*  axis = getMotionAxis(slave_id,sub_id);
+    if(axis == NULL){
+        return -1;
+    }
+    axis->SetAxisMotionJog(speed);
+    return 0;
+}
+
+qint32 EthercatMaster::setAxisStop(quint32 slave_id,quint32 sub_id){
+    AxisMotion*  axis = getMotionAxis(slave_id,sub_id);
+    if(axis == NULL){
+        return -1;
+    }
+    axis->SetAxisStop();
+    return 0;
+}
+
+

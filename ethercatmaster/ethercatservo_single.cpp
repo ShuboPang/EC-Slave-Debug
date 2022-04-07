@@ -140,7 +140,7 @@ static void single_setup_config(ec_slavet* slave){
 
 }
 
-static void single_cycle_run(ec_slavet* slave){
+static void single_cycle_run(ec_slavet* slave,AxisMotion* axis,int sub_id){
     SERVO_SINGLE_OUTPUT* output = (SERVO_SINGLE_OUTPUT*)slave->outputs;
     SERVO_SINGLE_INPUT* input = (SERVO_SINGLE_INPUT*)slave->inputs;
 

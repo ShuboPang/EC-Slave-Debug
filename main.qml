@@ -63,6 +63,10 @@ ApplicationWindow {
                  Action { text: qsTr("&FOE升级...")
                      shortcut: "Ctrl+l"
                     onTriggered: {
+                        if(slaveSel.currentIndex == -1){
+                            return;
+                        }
+                        ethercatmaster.updateSlaveFirm(slaveSel.currentIndex,"",20000)
 
                     }
                  }
@@ -897,9 +901,33 @@ ApplicationWindow {
                             spacing: 5
                             Text {
                                 text: qsTr("使能状态：")
+                                anchors.verticalCenter: parent.verticalCenter
+                                verticalAlignment: Text.AlignVCenter
                             }
-                            Text {
+                            Rectangle {
                                 id: servo1_on
+                                width: 100
+                                height: 30
+
+                                property bool servo_on_state: false
+
+                                border.width: 1
+                                border.color: "gray"
+
+                                color: servo_on_state?"lime":"gray"
+                                Text {
+                                    text: servo1_on.servo_on_state?qsTr("使能"):qsTr("失能")
+                                    anchors.centerIn: parent
+                                }
+
+                                MouseArea{
+                                    anchors.fill: parent
+                                    onClicked: {
+                                        ethercatmaster.setAxisStop(slaveSel.currentIndex,0)
+                                        ethercatmaster.servoOn(slaveSel.currentIndex,0,!ethercatmaster.getServoOn(slaveSel.currentIndex,0));
+                                    }
+                                }
+
                             }
                         }
                         Row{
@@ -911,46 +939,50 @@ ApplicationWindow {
                                 id: servo1_alarm
                             }
                         }
+                        Row{
+                            spacing: 5
+                            ICLineEdit{
+                                id:servo1_speed
+                                configName: qsTr("速度")
+                                unitText: "pules/ms"
+                            }
+                        }
+                        Row{
+                            spacing: 5
+                            ICLineEdit{
+                                id:servo1_targetPos
+                                configName: qsTr("位置")
+                                unitText: "pules"
+                            }
+                            Button{
+                                text: qsTr("启动")
+                            }
+                        }
 
                         Row{
                             spacing: 5
                             Button{
-                                text: qsTr("上使能")
+                                text: qsTr("正转")
                                 onClicked: {
-                                    ethercatmaster.servoOn(slaveSel.currentIndex,0,true);
+                                    ethercatmaster.setAxisJog(slaveSel.currentIndex,0,servo1_speed.intConfigValue())
                                 }
                             }
                             Button{
-                                text: qsTr("下使能")
+                                text: qsTr("反转")
                                 onClicked: {
-                                    ethercatmaster.servoOn(slaveSel.currentIndex,0,false);
+                                    ethercatmaster.setAxisJog(slaveSel.currentIndex,0,-servo1_speed.intConfigValue())
+                                }
+                            }
+                            Button{
+                                text: qsTr("停止")
+                                onClicked: {
+                                    ethercatmaster.setAxisStop(slaveSel.currentIndex,0)
                                 }
                             }
                             Button{
                                 text: qsTr("清除报警")
                                 onClicked: {
                                     ethercatmaster.clearServoAlarm(slaveSel.currentIndex,0);
-                                }
-                            }
-                        }
-                        Row{
-                            spacing: 5
-                            Button{
-                                text: qsTr("正转")
-                                onClicked: {
-
-                                }
-                            }
-                            Button{
-                                text: qsTr("反转")
-                                onClicked: {
-
-                                }
-                            }
-                            Button{
-                                text: qsTr("停止")
-                                onClicked: {
-
                                 }
                             }
                         }
@@ -974,7 +1006,7 @@ ApplicationWindow {
                             else{
                                 servo1_alarm.text = qsTr("无")
                             }
-                            servo1_on.text =  ethercatmaster.getServoOn(slaveSel.currentIndex,0)==1?qsTr("使能"):qsTr("失能")
+                            servo1_on.servo_on_state =  ethercatmaster.getServoOn(slaveSel.currentIndex,0)
                             servo1_cmdpos.text = ethercatmaster.getServoCmdPos(slaveSel.currentIndex,0)
 
                         }

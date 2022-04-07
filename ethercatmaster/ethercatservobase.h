@@ -4,6 +4,7 @@
 #include "ethercatmain.h"
 #include "ethercatcoe.h"
 #include "ethercatprint.h"
+#include "axismotion.h"
 
 
 typedef struct{
@@ -35,7 +36,7 @@ typedef struct {
     ///
     ///  定时周期循环
     ///
-    void (*cycle_run)(ec_slavet*);
+    void (*cycle_run)(ec_slavet*,AxisMotion*,int);
 
     ///
     /// pdo 配置

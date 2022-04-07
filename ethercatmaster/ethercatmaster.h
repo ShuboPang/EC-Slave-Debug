@@ -12,6 +12,8 @@
 #include "ethercatcoe.h"
 #include "ethercatbase.h"
 
+#include "axismotion.h"
+
 
 class EthercatMaster:public QObject
 {
@@ -95,6 +97,8 @@ public:
 
     Q_INVOKABLE QString readSII(quint32 slave_id);
 
+
+
     Q_INVOKABLE void clearServoAlarm(quint32 slave_id, quint32 sub_id);
 
     Q_INVOKABLE qint32 getServoAlarm(quint32 slave_id,quint32 sub_id);
@@ -106,6 +110,15 @@ public:
     Q_INVOKABLE qint32 getServoOn(quint32 slave_id,quint32 sub_id);
 
     Q_INVOKABLE qint32 getServoCmdPos(quint32 slave_id,quint32 sub_id);
+
+    Q_INVOKABLE qint32 setAxisJog(quint32 slave_id,quint32 sub_id,qint32 speed);
+
+    Q_INVOKABLE qint32 setAxisStop(quint32 slave_id,quint32 sub_id);
+
+    Q_INVOKABLE qint32 updateSlaveFirm(quint32 slave_id, const QString path);
+
+private:
+    AxisMotion* getMotionAxis(quint32 slave_id,quint32 sub_id);
 
 private:
     boolean printSDO = FALSE;

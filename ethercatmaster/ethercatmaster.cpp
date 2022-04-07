@@ -11,7 +11,8 @@
 
 #define EC_TIMEOUTMON 500
 
-OSAL_THREAD_HANDLE thread1;
+OSAL_THREAD_HANDLE thread1 = NULL;
+UINT mmResult = 0;//< 定时器
 int expectedWKC;
 boolean needlf;
 volatile int wkc;
@@ -22,6 +23,8 @@ char IOmap[4096];
 int16_t* IOmap16;
 ec_ODlistt ODlist;
 ec_OElistt OElist;
+
+
 
 static QMap<int,const _EthercatSlaveConfig*> ethercat_servo_map;
 
@@ -135,9 +138,8 @@ QStringList EthercatMaster::scanNetwork(){
 /// \return     0：正常  -1：网卡不存在  -2：无法初始化网卡 -3：没有找到从站设备
 ///
 qint32 EthercatMaster::init(quint32 network_id){
+    ecClose();
     int i, j, oloop, iloop, wkc_count, chk, slc;
-    UINT mmResult;
-
     needlf = FALSE;
     inOP = FALSE;
 
@@ -282,6 +284,16 @@ qint32 EthercatMaster::init(quint32 network_id){
     return -2;
 }
 
+Q_INVOKABLE void EthercatMaster::ecClose(){
+    if(thread1){
+        CloseHandle(thread1);
+    }
+    if(mmResult){
+        timeKillEvent(mmResult);
+    }
+    ec_close();
+}
+
 QStringList EthercatMaster::getSlaveNameList(){
     QStringList str;
     quint32 count = getSlaveCount();
@@ -302,14 +314,23 @@ quint32 EthercatMaster::getSlaveCount(){
 
 
 quint32 EthercatMaster::getSlaveState(quint32 slave_id){
+    ec_readstate();
     return ec_slave[slave_id+1].state;
 }
 
 quint32 EthercatMaster::getSlaveIslost(quint32 slave_id){
+    ec_readstate();
+    if(!ec_slave[slave_id+1].state){
+        ec_slave[slave_id+1].islost = 1;
+    }
+    else{
+        ec_slave[slave_id+1].islost = 0;
+    }
     return ec_slave[slave_id+1].islost;
 }
 
 QString EthercatMaster::getSlaveInfo(quint32 slave_id){
+    ec_readstate();
     QJsonObject info;
     ec_slavet* slave = &ec_slave[slave_id+1];
 

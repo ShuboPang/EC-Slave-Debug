@@ -150,6 +150,12 @@ static void szhc_cycle_run(ec_slavet* slave){
     else{
         output->axis_1_TargetPos2 = input->axis_1_Current_Pos;
     }
+    if(input->axis_2_Current_Status.bit.act){
+        output->axis_2_TargetPos2 += 10;
+    }
+    else{
+        output->axis_2_TargetPos2 = input->axis_2_Current_Pos;
+    }
 }
 
 static int szhc_pdo_config_setup(uint16 slave)

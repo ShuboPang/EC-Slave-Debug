@@ -49,6 +49,19 @@ ApplicationWindow {
                  }
             }
             Menu {
+                 title: qsTr("&从站升级")
+                 Action { text: qsTr("&打开升级文件...")
+                    onTriggered: {
+                        openFileDialog_alias.visible = true;
+                    }
+                 }
+                 Action { text: qsTr("&保存SII")
+                    onTriggered: {
+                        outputFileDialog_alias.visible = true;
+                    }
+                 }
+            }
+            Menu {
                  title: qsTr("&脚本")
                  Action {
                      text: qsTr("&开始录制脚本...")
@@ -110,6 +123,7 @@ ApplicationWindow {
         }
         Button{
             text: qsTr("初始化")
+            enabled:networkList.enabled
             onClicked: {
                 if(networkList.currentIndex == -1){
                     return;
@@ -134,8 +148,7 @@ ApplicationWindow {
                 esdSlaveSel.model = ethercatmaster.getSlaveNameList();
                 siiSlaveSel.model = ethercatmaster.getSlaveNameList();
                 console.log("ethermaster.getSlaveNameList()",ethercatmaster.getSlaveNameList())
-                networkList.enabled = false;
-                enabled= false
+//                networkList.enabled = false;
             }
         }
         Text {
@@ -231,8 +244,15 @@ ApplicationWindow {
                 for(let i = 0;i<slaveDeviceListModel.count;i++){
                     let slave_info = slaveDeviceListModel.get(i);
                     var slave = EthercatInfoJs.ethercatSlaveDeviceFind(slave_info.eep_man,slave_info.eep_id)
+                    var islost = ethercatmaster.getSlaveIslost(i);
                     slaveDeviceListModel.setProperty(i,"ec_state",ethercatmaster.getSlaveState(i))
-                    slaveDeviceListModel.setProperty(i,"islost",ethercatmaster.getSlaveIslost(i))
+                    if(islost){
+                        if(!slave_info.islost){
+                            dialog.waring(qsTr("严重错误"),qsTr("从站")+i+" "+slave_info.name+qsTr("掉线"))
+                        }
+                    }
+                    slaveDeviceListModel.setProperty(i,"islost",islost)
+
                     if(slave == undefined){
 
                     }
@@ -936,9 +956,9 @@ ApplicationWindow {
                     border.width: 1
                     border.color: "black"
                     Column{
-                        spacing: 10
                         x:10
                         y:10
+                        spacing: 10
                         Text {
                             text: qsTr("轴1")
                         }
@@ -964,6 +984,15 @@ ApplicationWindow {
                         Row{
                             spacing: 5
                             Text {
+                                text: qsTr("使能状态：")
+                            }
+                            Text {
+                                id: servo2_on
+                            }
+                        }
+                        Row{
+                            spacing: 5
+                            Text {
                                 text: qsTr("报警：")
                             }
                             Text {
@@ -975,9 +1004,21 @@ ApplicationWindow {
                             spacing: 5
                             Button{
                                 text: qsTr("清除报警")
+                                onClicked: {
+                                    ethercatmaster.clearServoAlarm(slaveSel.currentIndex,1);
+                                }
                             }
                             Button{
-                                text: qsTr("使能")
+                                text: qsTr("上使能")
+                                onClicked: {
+                                    ethercatmaster.servoOn(slaveSel.currentIndex,1,true);
+                                }
+                            }
+                            Button{
+                                text: qsTr("下使能")
+                                onClicked: {
+                                    ethercatmaster.servoOn(slaveSel.currentIndex,1,false);
+                                }
                             }
                         }
                     }
@@ -991,6 +1032,18 @@ ApplicationWindow {
                             if(slaveSel.currentIndex == -1)
                                 return
                             servo2_pos.text = ethercatmaster.getServoPos(slaveSel.currentIndex,1)
+                            let alarm_num = ethercatmaster.getServoAlarm(slaveSel.currentIndex,1)
+                            let slave_info = slaveDeviceListModel.get(slaveSel.currentIndex);
+                            let slave = EthercatInfoJs.ethercatSlaveDeviceFind(slave_info.eep_man,slave_info.eep_id)
+                            if(alarm_num){
+                                servo2_alarm.text  = alarm_num+":"+slave.alarm_list[alarm_num]
+                            }
+                            else{
+                                servo2_alarm.text = qsTr("无")
+                            }
+                            servo2_on.text =  ethercatmaster.getServoOn(slaveSel.currentIndex,1)==1?qsTr("使能"):qsTr("失能")
+                            servo2_cmdpos.text = ethercatmaster.getServoCmdPos(slaveSel.currentIndex,1)
+
                         }
                     }
                 }

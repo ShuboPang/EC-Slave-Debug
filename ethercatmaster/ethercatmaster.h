@@ -32,6 +32,8 @@ public:
     ///
     Q_INVOKABLE qint32 init(quint32 network_id);
 
+
+    Q_INVOKABLE void ecClose();
     ///
     /// \brief getSlaveCount    获取从站数量
     /// \return

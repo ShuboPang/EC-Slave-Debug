@@ -130,6 +130,10 @@ int single_is_surport(ec_slavet* slave){
     return 0;
 }
 
+int single_axis_num(){
+    return 1;
+}
+
 static void single_setup_config(ec_slavet* slave){
     SERVO_SINGLE_OUTPUT* output = (SERVO_SINGLE_OUTPUT*)slave->outputs;
     SERVO_SINGLE_INPUT* input = (SERVO_SINGLE_INPUT*)slave->inputs;
@@ -223,6 +227,7 @@ int single_get_servo_cmd_pos(ec_slavet* slave,int axis_id){
 
 const _EthercatSlaveConfig ethercatservo_single={
     single_is_surport,
+    single_axis_num,
     single_setup_config,
     single_cycle_run,
     single_pdo_config_setup,

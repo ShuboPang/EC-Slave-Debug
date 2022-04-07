@@ -10,6 +10,7 @@
 #include <QCoreApplication>
 
 #include "ethercatservobase.h"
+#include "axismotion.h"
 
 #define EC_TIMEOUTMON 500
 
@@ -27,8 +28,9 @@ ec_ODlistt ODlist;
 ec_OElistt OElist;
 
 
-
 static QMap<int,const _EthercatSlaveConfig*> ethercat_servo_map;
+
+static QMap<int,QVector<AxisMotion*>> ethercat_servo_axis_map;
 
 /* most basic RT thread for process data, just does IO transfer */
 void CALLBACK RTthread(UINT uTimerID, UINT uMsg, DWORD_PTR dwUser, DWORD_PTR dw1,  DWORD_PTR dw2)
@@ -210,6 +212,13 @@ qint32 EthercatMaster::init(quint32 network_id){
                         const _EthercatSlaveConfig* slave_config = ethercat_servo_map.value(slc);
                         if(slave_config!=NULL){
                             ec_slave[slc].PO2SOconfig = slave_config->setup_pdo_config;
+                            QVector<AxisMotion*> axis ;
+                            for(int k = 0;k<slave_config->axis_num();k++){
+                                AxisMotion* axis_motion = new AxisMotion;
+                                axis.push_back(axis_motion);
+                            }
+                            ethercat_servo_axis_map.insert(slc,axis);
+
                         }
                     }
                     printf("find slave %d : man = %x  id = %x \n",slc,ec_slave[slc].eep_man,ec_slave[slc].eep_id);
@@ -297,6 +306,7 @@ Q_INVOKABLE void EthercatMaster::ecClose(){
     if(mmResult){
         timeKillEvent(mmResult);
     }
+
     ec_close();
 }
 

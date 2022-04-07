@@ -122,6 +122,10 @@ int szhc_is_surport(ec_slavet* slave){
     return 0;
 }
 
+int szhc_axis_num(){
+    return 2;
+}
+
 static void szhc_setup_config(ec_slavet* slave){
     SERVO_SZHC_OUTPUT* output = (SERVO_SZHC_OUTPUT*)slave->outputs;
     SERVO_SZHC_INPUT* input = (SERVO_SZHC_INPUT*)slave->inputs;
@@ -270,6 +274,7 @@ int szhc_get_servo_cmd_pos(ec_slavet* slave,int axis_id){
 
 const _EthercatSlaveConfig ethercatservo_szhc={
     szhc_is_surport,
+    szhc_axis_num,
     szhc_setup_config,
     szhc_cycle_run,
     szhc_pdo_config_setup,
@@ -278,5 +283,5 @@ const _EthercatSlaveConfig ethercatservo_szhc={
     szhc_get_servo_alarm,
     szhc_get_servo_pos,
     szhc_get_servo_on,
-    szhc_get_servo_cmd_pos
+    szhc_get_servo_cmd_pos,
 };

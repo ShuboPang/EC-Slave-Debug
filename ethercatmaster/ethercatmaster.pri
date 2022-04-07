@@ -4,4 +4,5 @@ HEADERS += \
 
 SOURCES += \
     $$PWD/ethercatmaster.cpp \
+    $$PWD/ethercatservo_single.cpp \
     $$PWD/ethercatservo_szhc.cpp

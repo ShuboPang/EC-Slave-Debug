@@ -17,11 +17,13 @@ ApplicationWindow {
             Menu {
                  title: qsTr("&伺服参数")
                  Action { text: qsTr("&打开伺服参数文件...")
+                    shortcut: "Ctrl+O"
                     onTriggered: {
                         openFileDialog.visible = true;
                     }
                  }
                  Action { text: qsTr("&保存伺服参数")
+                     shortcut: "Ctrl+s"
                     onTriggered: {
                         outputFileDialog.visible = true;
                     }
@@ -38,11 +40,13 @@ ApplicationWindow {
             Menu {
                  title: qsTr("&SII")
                  Action { text: qsTr("&打开SII文件...")
+                     shortcut: "Ctrl+i"
                     onTriggered: {
                         openFileDialog_alias.visible = true;
                     }
                  }
                  Action { text: qsTr("&保存SII")
+                     shortcut: "Ctrl+j"
                     onTriggered: {
                         outputFileDialog_alias.visible = true;
                     }
@@ -51,13 +55,15 @@ ApplicationWindow {
             Menu {
                  title: qsTr("&从站升级")
                  Action { text: qsTr("&打开升级文件...")
+                     shortcut: "Ctrl+u"
                     onTriggered: {
-                        openFileDialog_alias.visible = true;
+
                     }
                  }
-                 Action { text: qsTr("&保存SII")
+                 Action { text: qsTr("&FOE升级...")
+                     shortcut: "Ctrl+l"
                     onTriggered: {
-                        outputFileDialog_alias.visible = true;
+
                     }
                  }
             }
@@ -161,6 +167,9 @@ ApplicationWindow {
             id:slaveSel
             width: 300
             onCurrentIndexChanged: {
+                if(slaveSel.currentIndex == -1){
+                    return;
+                }
                 var slaveinfo = slaveDeviceListModel.get(slaveSel.currentIndex)
                 slaveAllInfo.text = JSON.stringify(slaveinfo,null,2);
                 slaveSiiInfo.text = ethercatmaster.readSII(slaveSel.currentIndex)
@@ -906,12 +915,6 @@ ApplicationWindow {
                         Row{
                             spacing: 5
                             Button{
-                                text: qsTr("清除报警")
-                                onClicked: {
-                                    ethercatmaster.clearServoAlarm(slaveSel.currentIndex,0);
-                                }
-                            }
-                            Button{
                                 text: qsTr("上使能")
                                 onClicked: {
                                     ethercatmaster.servoOn(slaveSel.currentIndex,0,true);
@@ -921,6 +924,33 @@ ApplicationWindow {
                                 text: qsTr("下使能")
                                 onClicked: {
                                     ethercatmaster.servoOn(slaveSel.currentIndex,0,false);
+                                }
+                            }
+                            Button{
+                                text: qsTr("清除报警")
+                                onClicked: {
+                                    ethercatmaster.clearServoAlarm(slaveSel.currentIndex,0);
+                                }
+                            }
+                        }
+                        Row{
+                            spacing: 5
+                            Button{
+                                text: qsTr("正转")
+                                onClicked: {
+
+                                }
+                            }
+                            Button{
+                                text: qsTr("反转")
+                                onClicked: {
+
+                                }
+                            }
+                            Button{
+                                text: qsTr("停止")
+                                onClicked: {
+
                                 }
                             }
                         }
@@ -1597,13 +1627,16 @@ ApplicationWindow {
         }
     }
 
-
-
-
-
     Component.onCompleted: {
         EthercatInfoJs.init();
-        networkList.model = ethercatmaster.scanNetwork();
+        var list = ethercatmaster.scanNetwork();
+        networkList.model = list
+        for(let i =0;i<list.length;i++){
+            if(list[i].indexOf("Realtek") != -1){
+                networkList.currentIndex = i;
+                break;
+            }
+        }
 
     }
 }

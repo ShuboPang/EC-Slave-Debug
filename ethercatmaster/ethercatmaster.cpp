@@ -6,6 +6,8 @@
 #include <QJsonDocument>
 #include <QFile>
 #include <QMap>
+#include <QApplication>
+#include <QCoreApplication>
 
 #include "ethercatservobase.h"
 
@@ -199,6 +201,9 @@ qint32 EthercatMaster::init(quint32 network_id){
                     if(ethercatservo_szhc.is_surport(&(ec_slave[slc]))){
                         ethercat_servo_map.insert(slc,&ethercatservo_szhc);
                     }
+                    if(ethercatservo_single.is_surport(&(ec_slave[slc]))){
+                        ethercat_servo_map.insert(slc,&ethercatservo_single);
+                    }
 
                     // 根据从站类型配置pdo
                     if(ethercat_servo_map.contains(slc)){
@@ -256,6 +261,7 @@ qint32 EthercatMaster::init(quint32 network_id){
                 ec_send_processdata();
                 ec_receive_processdata(EC_TIMEOUTRET);
                 ec_statecheck(0, EC_STATE_OPERATIONAL, 50000);
+                qApp->processEvents();
             }
             while (chk-- && (ec_slave[0].state != EC_STATE_OPERATIONAL));
             if (ec_slave[0].state == EC_STATE_OPERATIONAL )

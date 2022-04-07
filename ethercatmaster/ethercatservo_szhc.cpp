@@ -1,13 +1,5 @@
 #include "ethercatservobase.h"
 
-
-
-typedef struct {
-    uint16_t index; /**< PDO entry index. */
-    uint8_t subindex; /**< PDO entry subindex. */
-    uint8_t bit_length; /**< Size of the PDO entry in bit. */
-} ec_pdo_entry_info_t;
-
 typedef union
 {
     struct
@@ -145,13 +137,13 @@ static void szhc_cycle_run(ec_slavet* slave){
     output->axis_1_ControlStatus.bit.pos_num = 1;
     output->axis_2_ControlStatus.bit.pos_num = 1;
     if(input->axis_1_Current_Status.bit.act){
-        output->axis_1_TargetPos2 += 10;
+
     }
     else{
         output->axis_1_TargetPos2 = input->axis_1_Current_Pos;
     }
     if(input->axis_2_Current_Status.bit.act){
-        output->axis_2_TargetPos2 += 10;
+
     }
     else{
         output->axis_2_TargetPos2 = input->axis_2_Current_Pos;

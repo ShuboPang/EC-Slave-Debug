@@ -51,6 +51,9 @@ public:
     ///
     Q_INVOKABLE quint32 getSlaveState(quint32 slave_id);
 
+
+    Q_INVOKABLE quint32 getSlaveIslost(quint32 slave_id);
+
     ///
     /// \brief getSlaveInfo     获取从站信息
     /// \param slave
@@ -90,6 +93,17 @@ public:
 
     Q_INVOKABLE QString readSII(quint32 slave_id);
 
+    Q_INVOKABLE void clearServoAlarm(quint32 slave_id, quint32 sub_id);
+
+    Q_INVOKABLE qint32 getServoAlarm(quint32 slave_id,quint32 sub_id);
+
+    Q_INVOKABLE void servoOn(quint32 slave_id, quint32 sub_id, bool state);
+
+    Q_INVOKABLE qint32 getServoPos(quint32 slave_id,quint32 sub_id);
+
+    Q_INVOKABLE qint32 getServoOn(quint32 slave_id,quint32 sub_id);
+
+    Q_INVOKABLE qint32 getServoCmdPos(quint32 slave_id,quint32 sub_id);
 
 private:
     boolean printSDO = FALSE;

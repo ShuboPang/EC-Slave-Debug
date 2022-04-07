@@ -5,6 +5,9 @@
 #include <QJsonObject>
 #include <QJsonDocument>
 #include <QFile>
+#include <QMap>
+
+#include "ethercatservobase.h"
 
 #define EC_TIMEOUTMON 500
 
@@ -16,17 +19,27 @@ volatile int rtcnt;
 boolean inOP;
 uint8 currentgroup = 0;
 char IOmap[4096];
+int16_t* IOmap16;
 ec_ODlistt ODlist;
 ec_OElistt OElist;
+
+static QMap<int,const _EthercatSlaveConfig*> ethercat_servo_map;
 
 /* most basic RT thread for process data, just does IO transfer */
 void CALLBACK RTthread(UINT uTimerID, UINT uMsg, DWORD_PTR dwUser, DWORD_PTR dw1,  DWORD_PTR dw2)
 {
-    IOmap[6]++;
     ec_send_processdata();
     wkc = ec_receive_processdata(EC_TIMEOUTRET);
     rtcnt++;
     /* do RT control stuff here */
+    for(int i = 1;i<=ec_slavecount;i++){
+        if(ethercat_servo_map.contains(i)){
+            const _EthercatSlaveConfig* slave_config = ethercat_servo_map.value(i);
+            if(slave_config!=NULL){
+                slave_config->cycle_run(&(ec_slave[i]));
+            }
+        }
+    }
 }
 
 //DWORD WINAPI ecatcheck( LPVOID lpParam )
@@ -128,6 +141,8 @@ qint32 EthercatMaster::init(quint32 network_id){
     needlf = FALSE;
     inOP = FALSE;
 
+    ethercat_servo_map.clear();
+
     QString name = ScanHardware::GetNetworkName(network_id);
     if(!name.size()){
         return -1;
@@ -149,37 +164,54 @@ qint32 EthercatMaster::init(quint32 network_id){
             {
                 for(slc = 1; slc <= ec_slavecount; slc++)
                 {
-                    // beckhoff EL7031, using ec_slave[].name is not very reliable
-                    if((ec_slave[slc].eep_man == 0x00000002) && (ec_slave[slc].eep_id == 0x1b773052))
-                    {
-                        printf("Found %s at position %d\n", ec_slave[slc].name, slc);
-                        // link slave specific setup to preop->safeop hook
-//                        ec_slave[slc].PO2SOconfig = &EL7031setup;
-                    }
-                    // Copley Controls EAP, using ec_slave[].name is not very reliable
-                    else if((ec_slave[slc].eep_man == 0x000000ab) && (ec_slave[slc].eep_id == 0x00000380))
-                    {
-                        printf("Found %s at position %d\n", ec_slave[slc].name, slc);
-                        // link slave specific setup to preop->safeop hook
-//                        ec_slave[slc].PO2SOconfig = &AEPsetup;
+//                    // beckhoff EL7031, using ec_slave[].name is not very reliable
+//                    if((ec_slave[slc].eep_man == 0x00000002) && (ec_slave[slc].eep_id == 0x1b773052))
+//                    {
+//                        printf("Found %s at position %d\n", ec_slave[slc].name, slc);
+//                        // link slave specific setup to preop->safeop hook
+////                        ec_slave[slc].PO2SOconfig = &EL7031setup;
+//                    }
+//                    // Copley Controls EAP, using ec_slave[].name is not very reliable
+//                    else if((ec_slave[slc].eep_man == 0x000000ab) && (ec_slave[slc].eep_id == 0x00000380))
+//                    {
+//                        printf("Found %s at position %d\n", ec_slave[slc].name, slc);
+//                        // link slave specific setup to preop->safeop hook
+////                        ec_slave[slc].PO2SOconfig = &AEPsetup;
+//                    }
+
+//                    // Copley Controls yk2405, using ec_slave[].name is not very reliable
+//                    else if((ec_slave[slc].eep_man == 0x00000994) && (ec_slave[slc].eep_id == 0x00002000))
+//                    {
+//                        printf("Found %s at position %d\n", ec_slave[slc].name, slc);
+//                        // link slave specific setup to preop->safeop hook
+////                        ec_slave[slc].PO2SOconfig = &Yk2405Setup;
+//                    }
+//                    else if((ec_slave[slc].eep_man == 0x00000766) && (ec_slave[slc].eep_id == 0x0000501))
+//                    {
+//                        printf("Found %s at position %d\n", ec_slave[slc].name, slc);
+//                        // link slave specific setup to preop->safeop hook
+////                        ec_slave[slc].PO2SOconfig = &HC2000setup;
+//                    }
+
+                    /// 添加从站和伺服对应关系
+                    if(ethercatservo_szhc.is_surport(&(ec_slave[slc]))){
+                        ethercat_servo_map.insert(slc,&ethercatservo_szhc);
                     }
 
-                    // Copley Controls yk2405, using ec_slave[].name is not very reliable
-                    else if((ec_slave[slc].eep_man == 0x00000994) && (ec_slave[slc].eep_id == 0x00002000))
-                    {
-                        printf("Found %s at position %d\n", ec_slave[slc].name, slc);
-                        // link slave specific setup to preop->safeop hook
-//                        ec_slave[slc].PO2SOconfig = &Yk2405Setup;
+                    // 根据从站类型配置pdo
+                    if(ethercat_servo_map.contains(slc)){
+                        const _EthercatSlaveConfig* slave_config = ethercat_servo_map.value(slc);
+                        if(slave_config!=NULL){
+                            ec_slave[slc].PO2SOconfig = slave_config->setup_pdo_config;
+                        }
                     }
-
                     printf("find slave %d : man = %x  id = %x \n",slc,ec_slave[slc].eep_man,ec_slave[slc].eep_id);
                 }
             }
 
             ec_config_map(&IOmap);
-            ec_configdc();
-
-
+//            ec_configdc();
+            IOmap16 = (int16_t*)IOmap;
             qDebug("Slaves mapped, state to SAFE_OP.\n");
             /* wait for all slaves to reach SAFE_OP state */
             ec_statecheck(0, EC_STATE_SAFE_OP,  EC_TIMEOUTSTATE * 4);
@@ -196,6 +228,7 @@ qint32 EthercatMaster::init(quint32 network_id){
             qDebug("Request operational state for all slaves\n");
             expectedWKC = (ec_group[0].outputsWKC * 2) + ec_group[0].inputsWKC;
             qDebug("Calculated workcounter %d\n", expectedWKC);
+
             ec_slave[0].state = EC_STATE_OPERATIONAL;
             /* send one valid process data to make outputs in slaves happy*/
             ec_send_processdata();
@@ -206,48 +239,38 @@ qint32 EthercatMaster::init(quint32 network_id){
 
             /* request OP state for all slaves */
             ec_writestate(0);
+
+            for(int j = 1;j<=ec_slavecount;j++){
+                ec_slave[j].state = EC_STATE_OPERATIONAL;
+                ec_writestate(j);
+                ec_send_processdata();
+                ec_receive_processdata(EC_TIMEOUTRET);
+            }
+
             chk = 40;
             /* wait for all slaves to reach OP state */
             do
             {
+                ec_send_processdata();
+                ec_receive_processdata(EC_TIMEOUTRET);
                 ec_statecheck(0, EC_STATE_OPERATIONAL, 50000);
             }
             while (chk-- && (ec_slave[0].state != EC_STATE_OPERATIONAL));
             if (ec_slave[0].state == EC_STATE_OPERATIONAL )
             {
-                qDebug("Operational state reached for all slaves.\n");
+                for(int j = 1;j<=ec_slavecount;j++){
+                    if(ethercat_servo_map.contains(j)){
+                        const _EthercatSlaveConfig* slave_config = ethercat_servo_map.value(j);
+                        if(slave_config!=NULL){
+                            slave_config->setup_config(&(ec_slave[j]));
+                        }
+                    }
+                }
+                qDebug("Operational state reached for all slaves.%d  %d  %d \n",ec_slave[0].state,ec_slave[1].state,ec_slave[2].state);
 //                printf("Operational state reached for all slaves.\n");
-//                wkc_count = 0;
-//                inOP = TRUE;
-
-
-//                /* cyclic loop, reads data from RT thread */
-//                for(i = 1; i <= 500; i++)
-//                {
-//                    if(wkc >= expectedWKC)
-//                    {
-//                        printf("Processdata cycle %4d, WKC %d , O:", rtcnt, wkc);
-
-//                        for(j = 0 ; j < oloop; j++)
-//                        {
-//                            printf(" %2.2x", *(ec_slave[0].outputs + j));
-//                        }
-
-//                        printf(" I:");
-//                        for(j = 0 ; j < iloop; j++)
-//                        {
-//                            printf(" %2.2x", *(ec_slave[0].inputs + j));
-//                        }
-//                        printf(" T:%lld\r",ec_DCtime);
-//                        needlf = TRUE;
-//                    }
-//                    osal_usleep(50000);
-
-//                }
-//                inOP = FALSE;
             }
             else{
-                qDebug("Not all slaves reached operational state.\n");
+                qDebug("Not all slaves reached operational state. %d  %d  %d\n",ec_slave[0].state,ec_slave[1].state,ec_slave[2].state);
             }
             return 0;
         }
@@ -258,6 +281,7 @@ qint32 EthercatMaster::init(quint32 network_id){
     }
     return -2;
 }
+
 QStringList EthercatMaster::getSlaveNameList(){
     QStringList str;
     quint32 count = getSlaveCount();
@@ -276,8 +300,13 @@ quint32 EthercatMaster::getSlaveCount(){
     return ec_slavecount;
 }
 
+
 quint32 EthercatMaster::getSlaveState(quint32 slave_id){
     return ec_slave[slave_id+1].state;
+}
+
+quint32 EthercatMaster::getSlaveIslost(quint32 slave_id){
+    return ec_slave[slave_id+1].islost;
 }
 
 QString EthercatMaster::getSlaveInfo(quint32 slave_id){
@@ -431,4 +460,76 @@ QString EthercatMaster::readSII(quint32 slave_id){
     memset(out,0,sizeof (out));
     ec_read_sii_infomation(slave_id+1,out);
     return QString(out);
+}
+
+void EthercatMaster::clearServoAlarm(quint32 slave_id,quint32 sub_id){
+     ++slave_id;
+    ec_slavet* slave = &ec_slave[slave_id];
+    if(ethercat_servo_map.contains(slave_id)){
+        const _EthercatSlaveConfig* slave_config = ethercat_servo_map.value(slave_id);
+        if(slave_config!=NULL){
+            slave_config->clear_alarm(slave,sub_id);
+        }
+    }
+}
+
+qint32 EthercatMaster::getServoAlarm(quint32 slave_id,quint32 sub_id){
+    ++slave_id;
+    ec_slavet* slave = &ec_slave[slave_id];
+    if(ethercat_servo_map.contains(slave_id)){
+        const _EthercatSlaveConfig* slave_config = ethercat_servo_map.value(slave_id);
+        if(slave_config!=NULL){
+            return slave_config->get_servo_alarm(slave,sub_id);
+        }
+    }
+    return 0;
+}
+
+void EthercatMaster::servoOn(quint32 slave_id,quint32 sub_id,bool state){
+     ++slave_id;
+    ec_slavet* slave = &ec_slave[slave_id];
+    if(ethercat_servo_map.contains(slave_id)){
+        const _EthercatSlaveConfig* slave_config = ethercat_servo_map.value(slave_id);
+        if(slave_config!=NULL){
+            slave_config->servo_on(slave,sub_id,state);
+        }
+    }
+}
+
+
+qint32 EthercatMaster::getServoPos(quint32 slave_id,quint32 sub_id){
+     ++slave_id;
+    ec_slavet* slave = &ec_slave[slave_id];
+    if(ethercat_servo_map.contains(slave_id)){
+        const _EthercatSlaveConfig* slave_config = ethercat_servo_map.value(slave_id);
+        if(slave_config!=NULL){
+            return slave_config->get_servo_pos(slave,sub_id);
+        }
+    }
+    return 0;
+}
+
+qint32 EthercatMaster::getServoOn(quint32 slave_id,quint32 sub_id){
+    ++slave_id;
+    ec_slavet* slave = &ec_slave[slave_id];
+    if(ethercat_servo_map.contains(slave_id)){
+        const _EthercatSlaveConfig* slave_config = ethercat_servo_map.value(slave_id);
+        if(slave_config!=NULL){
+            return slave_config->get_servo_on(slave,sub_id);
+        }
+    }
+    return 0;
+}
+
+
+qint32 EthercatMaster::getServoCmdPos(quint32 slave_id,quint32 sub_id){
+    ++slave_id;
+    ec_slavet* slave = &ec_slave[slave_id];
+    if(ethercat_servo_map.contains(slave_id)){
+        const _EthercatSlaveConfig* slave_config = ethercat_servo_map.value(slave_id);
+        if(slave_config!=NULL){
+            return slave_config->get_servo_cmd_pos(slave,sub_id);
+        }
+    }
+    return 0;
 }

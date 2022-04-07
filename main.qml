@@ -134,6 +134,8 @@ ApplicationWindow {
                 esdSlaveSel.model = ethercatmaster.getSlaveNameList();
                 siiSlaveSel.model = ethercatmaster.getSlaveNameList();
                 console.log("ethermaster.getSlaveNameList()",ethercatmaster.getSlaveNameList())
+                networkList.enabled = false;
+                enabled= false
             }
         }
         Text {
@@ -230,6 +232,7 @@ ApplicationWindow {
                     let slave_info = slaveDeviceListModel.get(i);
                     var slave = EthercatInfoJs.ethercatSlaveDeviceFind(slave_info.eep_man,slave_info.eep_id)
                     slaveDeviceListModel.setProperty(i,"ec_state",ethercatmaster.getSlaveState(i))
+                    slaveDeviceListModel.setProperty(i,"islost",ethercatmaster.getSlaveIslost(i))
                     if(slave == undefined){
 
                     }
@@ -378,6 +381,17 @@ ApplicationWindow {
                                 horizontalAlignment: Text.AlignHCenter
                                 width: 150
                             }
+                            Rectangle{
+                                width: 1
+                                height: parent.height
+                                color: "black"
+                            }
+                            Text {
+                                text: qsTr("在线")
+                                anchors.verticalCenter: parent.verticalCenter
+                                horizontalAlignment: Text.AlignHCenter
+                                width: 150
+                            }
                         }
                     }
                     delegate: Rectangle{
@@ -435,6 +449,17 @@ ApplicationWindow {
                             }
                             Text {
                                 text: "0x"+alarm_value.toString(16)+"("+alarm_value+")"
+                                anchors.verticalCenter: parent.verticalCenter
+                                horizontalAlignment: Text.AlignHCenter
+                                width: 150
+                            }
+                            Rectangle{
+                                width: 1
+                                height: parent.height
+                                color: "black"
+                            }
+                            Text {
+                                text: islost==1?qsTr("掉线"):qsTr("在线")
                                 anchors.verticalCenter: parent.verticalCenter
                                 horizontalAlignment: Text.AlignHCenter
                                 width: 150
@@ -807,6 +832,169 @@ ApplicationWindow {
         }
 
         Item {      //< 运动控制
+            Row{
+                Rectangle{
+                    width: parent.parent.width / 2
+                    height: parent.parent.height
+                    border.width: 1
+                    border.color: "black"
+                    Column{
+                        x:10
+                        y:10
+                        spacing: 10
+                        Text {
+                            text: qsTr("轴0")
+                        }
+                        Row{
+                            spacing: 5
+                            Text {
+                                text: qsTr("指令脉冲：")
+                            }
+                            Text {
+                                id: servo1_cmdpos
+                            }
+                        }
+
+                        Row{
+                            spacing: 5
+                            Text {
+                                text: qsTr("反馈脉冲：")
+                            }
+                            Text {
+                                id: servo1_pos
+                            }
+                        }
+                        Row{
+                            spacing: 5
+                            Text {
+                                text: qsTr("使能状态：")
+                            }
+                            Text {
+                                id: servo1_on
+                            }
+                        }
+                        Row{
+                            spacing: 5
+                            Text {
+                                text: qsTr("报警：")
+                            }
+                            Text {
+                                id: servo1_alarm
+                            }
+                        }
+
+                        Row{
+                            spacing: 5
+                            Button{
+                                text: qsTr("清除报警")
+                                onClicked: {
+                                    ethercatmaster.clearServoAlarm(slaveSel.currentIndex,0);
+                                }
+                            }
+                            Button{
+                                text: qsTr("上使能")
+                                onClicked: {
+                                    ethercatmaster.servoOn(slaveSel.currentIndex,0,true);
+                                }
+                            }
+                            Button{
+                                text: qsTr("下使能")
+                                onClicked: {
+                                    ethercatmaster.servoOn(slaveSel.currentIndex,0,false);
+                                }
+                            }
+                        }
+                    }
+
+
+                    Timer{
+                        running: visible
+                        interval: 50
+                        repeat: true
+                        onTriggered: {
+                            if(slaveSel.currentIndex == -1)
+                                return
+                            servo1_pos.text = ethercatmaster.getServoPos(slaveSel.currentIndex,0)
+                            let alarm_num = ethercatmaster.getServoAlarm(slaveSel.currentIndex,0)
+                            let slave_info = slaveDeviceListModel.get(slaveSel.currentIndex);
+                            let slave = EthercatInfoJs.ethercatSlaveDeviceFind(slave_info.eep_man,slave_info.eep_id)
+                            if(alarm_num){
+                                servo1_alarm.text  = alarm_num+":"+slave.alarm_list[alarm_num]
+                            }
+                            else{
+                                servo1_alarm.text = qsTr("无")
+                            }
+                            servo1_on.text =  ethercatmaster.getServoOn(slaveSel.currentIndex,0)==1?qsTr("使能"):qsTr("失能")
+                            servo1_cmdpos.text = ethercatmaster.getServoCmdPos(slaveSel.currentIndex,0)
+
+                        }
+                    }
+                }
+                Rectangle{
+                    width: parent.parent.width / 2
+                    height: parent.parent.height
+                    border.width: 1
+                    border.color: "black"
+                    Column{
+                        spacing: 10
+                        x:10
+                        y:10
+                        Text {
+                            text: qsTr("轴1")
+                        }
+                        Row{
+                            spacing: 5
+                            Text {
+                                text: qsTr("指令脉冲：")
+                            }
+                            Text {
+                                id: servo2_cmdpos
+                            }
+                        }
+
+                        Row{
+                            spacing: 5
+                            Text {
+                                text: qsTr("反馈脉冲：")
+                            }
+                            Text {
+                                id: servo2_pos
+                            }
+                        }
+                        Row{
+                            spacing: 5
+                            Text {
+                                text: qsTr("报警：")
+                            }
+                            Text {
+                                id: servo2_alarm
+                            }
+                        }
+
+                        Row{
+                            spacing: 5
+                            Button{
+                                text: qsTr("清除报警")
+                            }
+                            Button{
+                                text: qsTr("使能")
+                            }
+                        }
+                    }
+
+
+                    Timer{
+                        running: visible
+                        interval: 50
+                        repeat: true
+                        onTriggered: {
+                            if(slaveSel.currentIndex == -1)
+                                return
+                            servo2_pos.text = ethercatmaster.getServoPos(slaveSel.currentIndex,1)
+                        }
+                    }
+                }
+            }
         }
 
         Item {
@@ -915,7 +1103,7 @@ ApplicationWindow {
     FileDialog{
         id: openFileDialog_alias
         title: qsTr("伺服SII文件位置")
-        nameFilters: [ "ESI files(*.esi)"]
+        nameFilters: [ "EII files(*.eii)"]
 
         onAccepted: {
             siiDeviceListModel.clear()
@@ -935,7 +1123,7 @@ ApplicationWindow {
     FileDialog{
         id: outputFileDialog_alias
         title: qsTr("伺服SII文件保存位置")
-        nameFilters: ["ESI files(*.esi)"]
+        nameFilters: ["EII files(*.eii)"]
         selectMultiple: false
         selectExisting:false
         onAccepted: {

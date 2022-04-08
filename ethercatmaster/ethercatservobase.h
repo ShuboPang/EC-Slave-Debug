@@ -74,7 +74,10 @@ typedef struct {
     int (*get_servo_cmd_pos)(ec_slavet*,int);
 
 
-    int (*get_axis)(ec_slavet*,int);
+    float (*get_servo_torque)(ec_slavet*,int);
+
+    float (*get_servo_velocity)(ec_slavet*,int);
+
 }_EthercatSlaveConfig;
 
 extern const _EthercatSlaveConfig ethercatservo_szhc;

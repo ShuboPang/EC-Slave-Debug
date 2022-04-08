@@ -57,16 +57,13 @@ ApplicationWindow {
                  Action { text: qsTr("&打开升级文件...")
                      shortcut: "Ctrl+u"
                     onTriggered: {
-
+                        openFileDialog_firmware.open()
                     }
                  }
                  Action { text: qsTr("&FOE升级...")
                      shortcut: "Ctrl+l"
                     onTriggered: {
-                        if(slaveSel.currentIndex == -1){
-                            return;
-                        }
-                        ethercatmaster.updateSlaveFirm(slaveSel.currentIndex,"",20000)
+
 
                     }
                  }
@@ -157,6 +154,7 @@ ApplicationWindow {
                 slaveSel.model = ethercatmaster.getSlaveNameList();
                 esdSlaveSel.model = ethercatmaster.getSlaveNameList();
                 siiSlaveSel.model = ethercatmaster.getSlaveNameList();
+                firmwareSlaveSel.model = siiSlaveSel.model
                 console.log("ethermaster.getSlaveNameList()",ethercatmaster.getSlaveNameList())
 //                networkList.enabled = false;
             }
@@ -886,6 +884,9 @@ ApplicationWindow {
                             Text {
                                 id: servo1_cmdpos
                             }
+                            Text {
+                                text: qsTr("Pulse")
+                            }
                         }
 
                         Row{
@@ -895,6 +896,34 @@ ApplicationWindow {
                             }
                             Text {
                                 id: servo1_pos
+                            }
+                            Text {
+                                text: qsTr("Pulse")
+                            }
+                        }
+                        Row{
+                            spacing: 5
+                            Text {
+                                text: qsTr("实际转速：")
+                            }
+                            Text {
+                                id: servo1_velocity
+                            }
+                            Text {
+                                text: qsTr("Rpm/min")
+                            }
+                        }
+
+                        Row{
+                            spacing: 5
+                            Text {
+                                text: qsTr("实际扭矩：")
+                            }
+                            Text {
+                                id: servo1_torque
+                            }
+                            Text {
+                                text: qsTr("%")
                             }
                         }
                         Row{
@@ -945,6 +974,7 @@ ApplicationWindow {
                                 id:servo1_speed
                                 configName: qsTr("速度")
                                 unitText: "pules/ms"
+                                configValue: "50"
                             }
                         }
                         Row{
@@ -953,10 +983,9 @@ ApplicationWindow {
                                 id:servo1_targetPos
                                 configName: qsTr("位置")
                                 unitText: "pules"
+                                configValue: "0"
                             }
-                            Button{
-                                text: qsTr("启动")
-                            }
+
                         }
 
                         Row{
@@ -973,10 +1002,31 @@ ApplicationWindow {
                                     ethercatmaster.setAxisJog(slaveSel.currentIndex,0,-servo1_speed.intConfigValue())
                                 }
                             }
+
+                            Button{
+                                text: qsTr("启动")
+                            }
                             Button{
                                 text: qsTr("停止")
                                 onClicked: {
                                     ethercatmaster.setAxisStop(slaveSel.currentIndex,0)
+                                }
+                            }
+                        }
+                        Row{
+                            spacing: 5
+                            Button{
+                                text: qsTr("使能")
+                                onClicked: {
+                                    ethercatmaster.setAxisStop(slaveSel.currentIndex,0)
+                                    ethercatmaster.servoOn(slaveSel.currentIndex,0,true);
+                                }
+                            }
+                            Button{
+                                text: qsTr("失能")
+                                onClicked: {
+                                    ethercatmaster.setAxisStop(slaveSel.currentIndex,0)
+                                    ethercatmaster.servoOn(slaveSel.currentIndex,0,false);
                                 }
                             }
                             Button{
@@ -1008,6 +1058,8 @@ ApplicationWindow {
                             }
                             servo1_on.servo_on_state =  ethercatmaster.getServoOn(slaveSel.currentIndex,0)
                             servo1_cmdpos.text = ethercatmaster.getServoCmdPos(slaveSel.currentIndex,0)
+                            servo1_velocity.text = ethercatmaster.getServoVelocity(slaveSel.currentIndex,0)
+                            servo1_torque.text = ethercatmaster.getServoTorque(slaveSel.currentIndex,0)
 
                         }
                     }
@@ -1022,7 +1074,7 @@ ApplicationWindow {
                         y:10
                         spacing: 10
                         Text {
-                            text: qsTr("轴1")
+                            text: qsTr("轴0")
                         }
                         Row{
                             spacing: 5
@@ -1031,6 +1083,9 @@ ApplicationWindow {
                             }
                             Text {
                                 id: servo2_cmdpos
+                            }
+                            Text {
+                                text: qsTr("Pulse")
                             }
                         }
 
@@ -1042,14 +1097,66 @@ ApplicationWindow {
                             Text {
                                 id: servo2_pos
                             }
+                            Text {
+                                text: qsTr("Pulse")
+                            }
+                        }
+                        Row{
+                            spacing: 5
+                            Text {
+                                text: qsTr("实际转速：")
+                            }
+                            Text {
+                                id: servo2_velocity
+                            }
+                            Text {
+                                text: qsTr("Rpm/min")
+                            }
+                        }
+
+                        Row{
+                            spacing: 5
+                            Text {
+                                text: qsTr("实际扭矩：")
+                            }
+                            Text {
+                                id: servo2_torque
+                            }
+                            Text {
+                                text: qsTr("%")
+                            }
                         }
                         Row{
                             spacing: 5
                             Text {
                                 text: qsTr("使能状态：")
+                                anchors.verticalCenter: parent.verticalCenter
+                                verticalAlignment: Text.AlignVCenter
                             }
-                            Text {
+                            Rectangle {
                                 id: servo2_on
+                                width: 100
+                                height: 30
+
+                                property bool servo_on_state: false
+
+                                border.width: 1
+                                border.color: "gray"
+
+                                color: servo_on_state?"lime":"gray"
+                                Text {
+                                    text: servo2_on.servo_on_state?qsTr("使能"):qsTr("失能")
+                                    anchors.centerIn: parent
+                                }
+
+                                MouseArea{
+                                    anchors.fill: parent
+                                    onClicked: {
+                                        ethercatmaster.setAxisStop(slaveSel.currentIndex,1)
+                                        ethercatmaster.servoOn(slaveSel.currentIndex,1,!ethercatmaster.getServoOn(slaveSel.currentIndex,1));
+                                    }
+                                }
+
                             }
                         }
                         Row{
@@ -1061,25 +1168,71 @@ ApplicationWindow {
                                 id: servo2_alarm
                             }
                         }
+                        Row{
+                            spacing: 5
+                            ICLineEdit{
+                                id:servo2_speed
+                                configName: qsTr("速度")
+                                unitText: "pules/ms"
+                                configValue: "50"
+                            }
+                        }
+                        Row{
+                            spacing: 5
+                            ICLineEdit{
+                                id:servo2_targetPos
+                                configName: qsTr("位置")
+                                unitText: "pules"
+                                configValue: "0"
+                            }
+
+                        }
 
                         Row{
                             spacing: 5
                             Button{
-                                text: qsTr("清除报警")
+                                text: qsTr("正转")
                                 onClicked: {
-                                    ethercatmaster.clearServoAlarm(slaveSel.currentIndex,1);
+                                    ethercatmaster.setAxisJog(slaveSel.currentIndex,1,servo1_speed.intConfigValue())
                                 }
                             }
                             Button{
-                                text: qsTr("上使能")
+                                text: qsTr("反转")
                                 onClicked: {
+                                    ethercatmaster.setAxisJog(slaveSel.currentIndex,1,-servo1_speed.intConfigValue())
+                                }
+                            }
+
+                            Button{
+                                text: qsTr("启动")
+                            }
+                            Button{
+                                text: qsTr("停止")
+                                onClicked: {
+                                    ethercatmaster.setAxisStop(slaveSel.currentIndex,1)
+                                }
+                            }
+                        }
+                        Row{
+                            spacing: 5
+                            Button{
+                                text: qsTr("使能")
+                                onClicked: {
+                                    ethercatmaster.setAxisStop(slaveSel.currentIndex,1)
                                     ethercatmaster.servoOn(slaveSel.currentIndex,1,true);
                                 }
                             }
                             Button{
-                                text: qsTr("下使能")
+                                text: qsTr("失能")
                                 onClicked: {
+                                    ethercatmaster.setAxisStop(slaveSel.currentIndex,1)
                                     ethercatmaster.servoOn(slaveSel.currentIndex,1,false);
+                                }
+                            }
+                            Button{
+                                text: qsTr("清除报警")
+                                onClicked: {
+                                    ethercatmaster.clearServoAlarm(slaveSel.currentIndex,1);
                                 }
                             }
                         }
@@ -1103,8 +1256,10 @@ ApplicationWindow {
                             else{
                                 servo2_alarm.text = qsTr("无")
                             }
-                            servo2_on.text =  ethercatmaster.getServoOn(slaveSel.currentIndex,1)==1?qsTr("使能"):qsTr("失能")
+                            servo2_on.servo_on_state =  ethercatmaster.getServoOn(slaveSel.currentIndex,1)
                             servo2_cmdpos.text = ethercatmaster.getServoCmdPos(slaveSel.currentIndex,1)
+                            servo2_velocity.text = ethercatmaster.getServoVelocity(slaveSel.currentIndex,1)
+                            servo2_torque.text = ethercatmaster.getServoTorque(slaveSel.currentIndex,1)
 
                         }
                     }
@@ -1252,6 +1407,59 @@ ApplicationWindow {
         }
         Component.onCompleted: {
 
+        }
+    }
+    FileDialog{
+        id: openFileDialog_firmware
+        title: qsTr("伺服升级文件位置")
+        nameFilters: [ "BIN files(*.bin)"]
+
+        onAccepted: {
+            firmwareFilePath.text = fileUrl
+            firmwarePage.visible = true
+        }
+    }
+
+    Window{
+        id:firmwarePage
+        width: 800
+        height: 600
+        visible: false;
+        Column{
+            spacing: 10
+            x:10
+            y:10
+            Row{
+                spacing: 10
+                Text {
+                    text: qsTr("升级文件位置：")
+                }
+                Text{
+                    id:firmwareFilePath
+                }
+            }
+
+            Row{
+                spacing: 10
+                Text{
+                    text:qsTr("选择从站：")
+                    anchors.verticalCenter: parent.verticalCenter
+                    verticalAlignment: Text.AlignVCenter
+                }
+                ComboBox{
+                    id:firmwareSlaveSel
+                }
+                Button{
+                    text:qsTr("开始升级")
+                    onClicked: {
+                        if(firmwareSlaveSel.currentIndex == -1){
+                            return;
+                        }
+                        ethercatmaster.updateSlaveFirm(firmwareSlaveSel.currentIndex,firmwareFilePath.text)
+                        dialog.waring(qsTr("伺服升级"),qsTr("伺服升级完成"))
+                    }
+                }
+            }
         }
     }
 

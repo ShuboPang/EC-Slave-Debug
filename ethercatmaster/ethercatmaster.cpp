@@ -8,6 +8,7 @@
 #include <QMap>
 #include <QApplication>
 #include <QCoreApplication>
+#include <chrono>
 
 #include "ethercatservobase.h"
 
@@ -32,9 +33,17 @@ static QMap<int,const _EthercatSlaveConfig*> ethercat_servo_map;
 
 static QMap<int,QVector<AxisMotion*>> ethercat_servo_axis_map;
 
+QVector<int> time_;
+
+auto msec = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+auto end = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+
 /* most basic RT thread for process data, just does IO transfer */
 void CALLBACK RTthread(UINT uTimerID, UINT uMsg, DWORD_PTR dwUser, DWORD_PTR dw1,  DWORD_PTR dw2)
 {
+//    msec = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+//    time_.append(msec - end);
+//    end = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
     ec_send_processdata();
     wkc = ec_receive_processdata(EC_TIMEOUTRET);
     rtcnt++;
@@ -319,6 +328,7 @@ Q_INVOKABLE void EthercatMaster::ecClose(){
             delete  axis_motion.at(i);
         }
         axis_motion.clear();
+        ++it;
     }
     ethercat_servo_axis_map.clear();
     ec_close();
@@ -563,18 +573,21 @@ qint32 EthercatMaster::updateSlaveFirm(quint32 slave_id,const QString path){
                 if (value[0] == 0) {
                     break;
                 }
+                qApp->processEvents();
             }
             qDebug() << "Entered update process!";
             break;
         }
+        qApp->processEvents();
     }
     int sent_count = (byte_array.length() - offset) / buffSize;
     int last_sent = (byte_array.length() - offset) % buffSize;
     char *fp = byte_array.data() + offset;
     qDebug()<<"sent info:"<<sent_count<<" mod:"<<last_sent;
     for (int i = 0; i < sent_count; ++i) {
-//        qDebug()<<setw(5)<<i<<"/"<<sent_count;
+        qDebug()<<"-------"<<i<<"/"<<sent_count;
         ec_SDOread(slave_id, 0x5000, 1, FALSE, &rdl, value, EC_TIMEOUTRXM);
+        qApp->processEvents();
         if (value[0] == 0) {
             data_addr[0] = i & 0xFF;
             data_addr[1] = (i >> 8) & 0xFF;
@@ -583,7 +596,7 @@ qint32 EthercatMaster::updateSlaveFirm(quint32 slave_id,const QString path){
 
              memcpy(data, fp,buffSize);
 //            m.sdoDownload(&data);
-            ec_SDOwrite(slave_id, 0x5000, 0, FALSE, sizeof (data), data, EC_TIMEOUTRXM);      //< 写数据
+            ec_SDOwrite(slave_id, 0x5001, 0, FALSE, sizeof (data), data, EC_TIMEOUTRXM);      //< 写数据
 
 
 //            m.sdoDownload(&write_can_sent_flag);
@@ -599,19 +612,20 @@ qint32 EthercatMaster::updateSlaveFirm(quint32 slave_id,const QString path){
             //          --i;
         }
     }
-
+    qDebug()<<"+++++++"<<last_sent<<"/"<<sent_count;
     ec_SDOread(slave_id, 0x5000, 1, FALSE, &rdl, value, EC_TIMEOUTRXM);
-    if (value[0] == 0) {
+    if (last_sent && value[0] == 0) {
         data_addr[0] = sent_count & 0xFF;
         data_addr[1] = (sent_count >> 8) & 0xFF;
         ec_SDOwrite(slave_id, 0x5000, 2, FALSE, sizeof (data_addr), data_addr, EC_TIMEOUTRXM);      //< 写数据地址
 
-        memcpy(data, fp,buffSize);
-        ec_SDOwrite(slave_id, 0x5000, 0, FALSE, sizeof (data), data, EC_TIMEOUTRXM);      //< 写数据
+        memcpy(data, fp,last_sent);
+        ec_SDOwrite(slave_id, 0x5001, 0, FALSE, last_sent, data, EC_TIMEOUTRXM);      //< 写数据
 
         value[0] = 1;
         value[1] = 0;
         ec_SDOwrite(slave_id, 0x5000, 1, FALSE, sizeof (value), value, EC_TIMEOUTRXM);
+        qDebug()<<"******"<<last_sent<<"/"<<sent_count;
     }
     else
     {
@@ -621,6 +635,7 @@ qint32 EthercatMaster::updateSlaveFirm(quint32 slave_id,const QString path){
     value[0] = 2;
     value[1] = 0;
     ec_SDOwrite(slave_id, 0x5000, 1, FALSE, sizeof (value), value, EC_TIMEOUTRXM);
+    qDebug()<<"update finished";
     return 0;
 }
 
@@ -691,6 +706,30 @@ qint32 EthercatMaster::getServoCmdPos(quint32 slave_id,quint32 sub_id){
         const _EthercatSlaveConfig* slave_config = ethercat_servo_map.value(slave_id);
         if(slave_config!=NULL){
             return slave_config->get_servo_cmd_pos(slave,sub_id);
+        }
+    }
+    return 0;
+}
+
+qint32 EthercatMaster::getServoTorque(quint32 slave_id,quint32 sub_id){
+    ++slave_id;
+    ec_slavet* slave = &ec_slave[slave_id];
+    if(ethercat_servo_map.contains(slave_id)){
+        const _EthercatSlaveConfig* slave_config = ethercat_servo_map.value(slave_id);
+        if(slave_config!=NULL){
+            return slave_config->get_servo_torque(slave,sub_id);
+        }
+    }
+    return 0;
+}
+
+qint32 EthercatMaster::getServoVelocity(quint32 slave_id,quint32 sub_id){
+    ++slave_id;
+    ec_slavet* slave = &ec_slave[slave_id];
+    if(ethercat_servo_map.contains(slave_id)){
+        const _EthercatSlaveConfig* slave_config = ethercat_servo_map.value(slave_id);
+        if(slave_config!=NULL){
+            return slave_config->get_servo_velocity(slave,sub_id);
         }
     }
     return 0;

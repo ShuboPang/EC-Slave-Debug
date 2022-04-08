@@ -154,7 +154,7 @@ static void szhc_cycle_run(ec_slavet* slave,AxisMotion* axis,int sub_id){
     if(input->axis_2_Current_Status.bit.act){
         if(sub_id == 1){
             if(axis->GetAxisMotionState() == AxisMotion::Axis_Motion_Type_Jog){
-                output->axis_1_TargetPos2 += axis->GetAxisMotionSpeed();
+                output->axis_2_TargetPos2 += axis->GetAxisMotionSpeed();
             }
         }
     }
@@ -281,6 +281,31 @@ int szhc_get_servo_cmd_pos(ec_slavet* slave,int axis_id){
 }
 
 
+float szhc_gget_servo_torque(ec_slavet* slave,int axis_id){
+    float torque = 0.0;
+    SERVO_SZHC_INPUT* input = (SERVO_SZHC_INPUT*)slave->inputs;
+    if(axis_id == 0){
+        torque =  input->axis_1_Current_Torque/15.08;
+    }
+    else if(axis_id == 1){
+        torque =  input->axis_2_Current_Torque/15.08;
+    }
+    return torque;
+}
+
+float szhc_gget_servo_velocity(ec_slavet* slave,int axis_id){
+    float velocity = 0.0;
+    SERVO_SZHC_INPUT* input = (SERVO_SZHC_INPUT*)slave->inputs;
+    if(axis_id == 0){
+        velocity =  input->axis_1_Current_Velocity;
+    }
+    else if(axis_id == 1){
+        velocity =  input->axis_2_Current_Velocity;
+    }
+    return velocity;
+}
+
+
 const _EthercatSlaveConfig ethercatservo_szhc={
     szhc_is_surport,
     szhc_axis_num,
@@ -293,4 +318,6 @@ const _EthercatSlaveConfig ethercatservo_szhc={
     szhc_get_servo_pos,
     szhc_get_servo_on,
     szhc_get_servo_cmd_pos,
+    szhc_gget_servo_torque,
+    szhc_gget_servo_velocity
 };

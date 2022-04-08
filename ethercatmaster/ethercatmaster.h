@@ -109,7 +109,11 @@ public:
 
     Q_INVOKABLE qint32 getServoOn(quint32 slave_id,quint32 sub_id);
 
+    Q_INVOKABLE qint32 getServoTorque(quint32 slave_id,quint32 sub_id);
+
     Q_INVOKABLE qint32 getServoCmdPos(quint32 slave_id,quint32 sub_id);
+
+    Q_INVOKABLE qint32 getServoVelocity(quint32 slave_id,quint32 sub_id);
 
     Q_INVOKABLE qint32 setAxisJog(quint32 slave_id,quint32 sub_id,qint32 speed);
 

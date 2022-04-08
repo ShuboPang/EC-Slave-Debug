@@ -224,6 +224,18 @@ int single_get_servo_cmd_pos(ec_slavet* slave,int axis_id){
     return output->TargetPos;
 }
 
+float single_ggget_servo_torque(ec_slavet* slave,int axis_id){
+    float torque = 0.0;
+
+    return torque;
+}
+
+float single_ggget_servo_velocity(ec_slavet* slave,int axis_id){
+    float velocity = 0.0;
+
+    return velocity;
+}
+
 
 const _EthercatSlaveConfig ethercatservo_single={
     single_is_surport,
@@ -236,5 +248,7 @@ const _EthercatSlaveConfig ethercatservo_single={
     single_get_servo_alarm,
     single_get_servo_pos,
     single_get_servo_on,
-    single_get_servo_cmd_pos
+    single_get_servo_cmd_pos,
+    single_ggget_servo_torque,
+    single_ggget_servo_velocity
 };

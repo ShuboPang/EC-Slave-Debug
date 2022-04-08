@@ -33,7 +33,7 @@ ApplicationWindow {
                      text: qsTr("&退出")
                      shortcut: "QKeySequence::Quit"
                      onTriggered: {
-
+                        Qt.quit()
                      }
                  }
              }
@@ -1074,7 +1074,7 @@ ApplicationWindow {
                         y:10
                         spacing: 10
                         Text {
-                            text: qsTr("轴0")
+                            text: qsTr("轴1")
                         }
                         Row{
                             spacing: 5
@@ -1193,13 +1193,13 @@ ApplicationWindow {
                             Button{
                                 text: qsTr("正转")
                                 onClicked: {
-                                    ethercatmaster.setAxisJog(slaveSel.currentIndex,1,servo1_speed.intConfigValue())
+                                    ethercatmaster.setAxisJog(slaveSel.currentIndex,1,servo2_speed.intConfigValue())
                                 }
                             }
                             Button{
                                 text: qsTr("反转")
                                 onClicked: {
-                                    ethercatmaster.setAxisJog(slaveSel.currentIndex,1,-servo1_speed.intConfigValue())
+                                    ethercatmaster.setAxisJog(slaveSel.currentIndex,1,-servo2_speed.intConfigValue())
                                 }
                             }
 
@@ -1441,6 +1441,7 @@ ApplicationWindow {
 
             Row{
                 spacing: 10
+                visible: false
                 Text{
                     text:qsTr("选择从站：")
                     anchors.verticalCenter: parent.verticalCenter
@@ -1449,15 +1450,145 @@ ApplicationWindow {
                 ComboBox{
                     id:firmwareSlaveSel
                 }
-                Button{
-                    text:qsTr("开始升级")
-                    onClicked: {
-                        if(firmwareSlaveSel.currentIndex == -1){
-                            return;
+
+            }
+            ListView{
+                id:firmwareSlaveList
+                model:ListModel{
+                    id:firmwareSlaveListModel
+                }
+                ScrollBar.vertical:ScrollBar{
+
+                }
+
+                width: parent.width
+                height: 400
+                clip: true
+
+                header: Rectangle{
+                    width: parent.width
+                    height: 30
+                    border.color: "black"
+                    border.width: 1
+                    Row{
+                        width: parent.width
+                        height: parent.height
+                        Text {
+                            text: qsTr("是否升级")
+                            width: 80
+                            anchors.verticalCenter: parent.verticalCenter
+                            horizontalAlignment: Text.AlignHCenter
                         }
-                        ethercatmaster.updateSlaveFirm(firmwareSlaveSel.currentIndex,firmwareFilePath.text)
-                        dialog.waring(qsTr("伺服升级"),qsTr("伺服升级完成"))
+                        Rectangle{
+                            width: 1
+                            height: parent.height
+                            color: "black"
+                        }
+                        Text {
+                            text: qsTr("从站")
+                            width: 250
+                            anchors.verticalCenter: parent.verticalCenter
+                            horizontalAlignment: Text.AlignHCenter
+                        }
+                        Rectangle{
+                            width: 1
+                            height: parent.height
+                            color: "black"
+                        }
+                        Text {
+                            text: qsTr("状态")
+                            width: 200
+                            anchors.verticalCenter: parent.verticalCenter
+                            horizontalAlignment: Text.AlignHCenter
+                        }
                     }
+                }
+                delegate: Rectangle{
+                    width: parent.width
+                    height: 30
+                    border.color: "black"
+                    border.width: 1
+                    property bool isEdit: false
+                    color: (firmwareSlaveList.currentIndex == index)?"gray":(index%2==0?"white":"#f5f5f5")
+                    Row{
+                        width: parent.width
+                        height: parent.height
+                        CheckBox{
+                            checked: isUpdate==1?true:false
+                            onClicked: {
+                                firmwareSlaveListModel.setProperty(index,"isUpdate",checked?1:0)
+                            }
+                            width: 80
+                            anchors.verticalCenter: parent.verticalCenter
+                            height: parent.height
+                        }
+                        Rectangle{
+                            width: 1
+                            height: parent.height
+                            color: "black"
+                        }
+                        Text {
+                            text:index+"   "+aliasadr+":"+SIIindex+" "+name
+                            width: 250
+                            anchors.verticalCenter: parent.verticalCenter
+                            horizontalAlignment: Text.AlignHCenter
+                        }
+                        Rectangle{
+                            width: 1
+                            height: parent.height
+                            color: "black"
+                        }
+                        Text {
+                            text: updateState==-1?qsTr("未开始"):(updateState==0?qsTr("等待中"):(updateState==100?qsTr("升级完成"):(qsTr("升级中:")+updateState+"%")))
+                            width: 200
+                            anchors.verticalCenter: parent.verticalCenter
+                            horizontalAlignment: Text.AlignHCenter
+                        }
+                    }
+                }
+            }
+            Button{
+                text:qsTr("开始升级")
+                onClicked: {
+//                    if(firmwareSlaveSel.currentIndex == -1){
+//                        return;
+//                    }
+                    firmwareSlaveTimer.start()
+                    for(var i = 0;i<firmwareSlaveListModel.count;i++){
+                        if(firmwareSlaveListModel.get(i).isUpdate){
+                            firmwareSlaveTimer.currentSlave = i;
+                            ethercatmaster.updateSlaveFirm(i,firmwareFilePath.text)
+                            firmwareSlaveListModel.setProperty(i,"updateState",100)
+                        }
+                    }
+                    dialog.waring(qsTr("伺服升级"),qsTr("伺服升级完成"))
+                    firmwareSlaveTimer.stop()
+                }
+            }
+        }
+        Timer{
+            id:firmwareSlaveTimer
+            interval: 100
+            running: false
+            repeat: true
+
+            property int currentSlave: 0
+
+            onTriggered: {
+                var value = ethercatmaster.getFirmwareUpdateValue();                  //< 当前更新百分比
+                firmwareSlaveListModel.setProperty(currentSlave,"updateState",value)
+            }
+        }
+        onVisibleChanged: {
+            if(visible){
+                firmwareSlaveListModel.clear();
+                for(let i = 0;i<ethercatmaster.getSlaveCount();i++){
+                    var info = ethercatmaster.getSlaveInfo(i);
+                    var slaveInfo = JSON.parse(info);
+                    slaveInfo.alarm_value = 0;
+                    slaveInfo.isUpdate = 0;
+                    slaveInfo.updateState=-1;
+                    firmwareSlaveListModel.append(slaveInfo)
                 }
             }
         }

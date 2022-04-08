@@ -524,6 +524,7 @@ QString EthercatMaster::readSII(quint32 slave_id){
 }
 
 
+
 qint32 EthercatMaster::updateSlaveFirm(quint32 slave_id,const QString path){
     ++slave_id;
     int offset = 0;
@@ -586,6 +587,7 @@ qint32 EthercatMaster::updateSlaveFirm(quint32 slave_id,const QString path){
     qDebug()<<"sent info:"<<sent_count<<" mod:"<<last_sent;
     for (int i = 0; i < sent_count; ++i) {
         qDebug()<<"-------"<<i<<"/"<<sent_count;
+        firmware_update_value = i*100/sent_count;
         ec_SDOread(slave_id, 0x5000, 1, FALSE, &rdl, value, EC_TIMEOUTRXM);
         qApp->processEvents();
         if (value[0] == 0) {

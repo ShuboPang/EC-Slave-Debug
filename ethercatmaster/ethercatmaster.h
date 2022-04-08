@@ -119,6 +119,10 @@ public:
 
     Q_INVOKABLE qint32 setAxisStop(quint32 slave_id,quint32 sub_id);
 
+    Q_INVOKABLE float getFirmwareUpdateValue(){
+        return firmware_update_value;
+    }
+
     Q_INVOKABLE qint32 updateSlaveFirm(quint32 slave_id, const QString path);
 
 private:
@@ -131,6 +135,8 @@ private:
     char hstr[1024];
 
     int wkc;
+
+    float firmware_update_value;
 };
 
 #endif // ETHERCATMASTER_H

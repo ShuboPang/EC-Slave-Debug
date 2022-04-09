@@ -97,7 +97,7 @@ public:
 
     Q_INVOKABLE QString readSII(quint32 slave_id);
 
-
+    Q_INVOKABLE bool copyFileToPath(QString sourceDir ,QString toDir, bool coverFileIfExist);
 
     Q_INVOKABLE void clearServoAlarm(quint32 slave_id, quint32 sub_id);
 
@@ -122,8 +122,10 @@ public:
     Q_INVOKABLE float getFirmwareUpdateValue(){
         return firmware_update_value;
     }
+    Q_INVOKABLE QString unTarBfeFile(const QString& path);
 
-    Q_INVOKABLE qint32 updateSlaveFirm(quint32 slave_id, const QString path);
+
+    Q_INVOKABLE qint32 updateSlaveFirm(quint32 slave_id, const QString& path);
 
 private:
     AxisMotion* getMotionAxis(quint32 slave_id,quint32 sub_id);

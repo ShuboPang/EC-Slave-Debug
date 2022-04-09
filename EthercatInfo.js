@@ -281,6 +281,15 @@ var huacheng_sdo=[
 
         ]
 
+var yako_alarm_list={
+    1:qsTr("过流"),
+    2:qsTr("过压"),
+    3:qsTr("欠压"),
+    4:qsTr("错相"),
+    5:qsTr("超差报警"),
+    1000:qsTr("未知错误"),
+}
+
 var yako_sdo=[{"main_index":0x2000,"sub_index":0,"type":2,"describe":qsTr("驱动器版本号"),"unit":qsTr("")},
               {"main_index":0x2001,"sub_index":0,"type":2,"describe":qsTr("软件版本号"),"unit":qsTr("")},
               {"main_index":0x2201,"sub_index":0,"type":2,"describe":qsTr("电子齿轮比与细分切换"),"unit":qsTr("")},
@@ -300,6 +309,7 @@ var __EthercatSlave_huacheng={
     "sdo":huacheng_sdo,
     "alarm_list":huacheng_alarm,
     "axis_num":2,
+    "velocity_unit":"Rpm/min"
 //    "alarm_addr":{
 //        "main_index":0,
 //        "sub_index":0,
@@ -317,6 +327,7 @@ var __EthercatSlave_huacheng402={
     "sdo":huacheng_sdo,
     "alarm_list":huacheng_alarm,
     "axis_num":2,
+    "velocity_unit":"Rpm/min"
 //    "alarm_addr":{
 //        "main_index":0,
 //        "sub_index":0,
@@ -333,6 +344,7 @@ var __EthercatSlave_huacheng3000_402={
     "sdo":huacheng_sdo,
     "axis_num":2,
     "alarm_list":huacheng_alarm,
+    "velocity_unit":"Rpm/min"
 //    "alarm_addr":{
 //        "main_index":0,
 //        "sub_index":0,
@@ -349,6 +361,8 @@ var __EthercatSlave_yako2405pe={
     "eep_id":0x2000,
     "sdo":yako_sdo,
     "axis_num":1,
+    "velocity_unit":"pul/s",
+    "alarm_list":yako_alarm_list,
     "alarm_addr":{
         "main_index":0x603F,
         "sub_index":0,
@@ -368,6 +382,8 @@ var __EthercatSlave_yako2205pe={
     "eep_id":0x3000,
     "sdo":yako_sdo,
     "axis_num":1,
+    "velocity_unit":"pul/s",
+    "alarm_list":yako_alarm_list,
     "alarm_addr":{
         "main_index":0x603F,
         "sub_index":0,

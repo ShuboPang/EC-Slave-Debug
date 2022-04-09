@@ -25,13 +25,19 @@ public:
 
     void SetAxisMotionJog(int32_t speed);
 
-    void SetAxisStop();
+    void SetAxisStop(bool quick = false);
+
+    void SetAxisServoOn(bool state);
+
+    bool GetAxisServoOn();
 
 public:
     uint32_t state;     //< 运动状态
     int32_t speed;
     int32_t target_speed;
     int32_t timer;
+
+    bool servo_on_state;
 };
 
 #endif // AXISMOTION_H

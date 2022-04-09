@@ -4,21 +4,24 @@ typedef union
 {
     struct
     {
-        uint32_t ready:1,
-            act:1,
-            alarm:1,
-            alarm_num:7,
-            buf_count:7,
-            res:15;
+        uint16_t so:1,
+            ev:1,
+            qs:1,
+            eo:1,
+            oms:3,
+            fr:1,
+            h:1,
+            oms2:1,
+            res:6;
     } bit;
-    uint32_t all;
-} SERVO_STATUS_UNION;
+    uint16_t all;
+} SERVO_CTRL_UNION;
 
 typedef union
 {
     struct
     {
-        uint32_t rtso:1,        //< ready to switch on
+        uint16_t rtso:1,        //< ready to switch on
             so:1,       //< switched on
             oe:1,       //< operation enabled
             f:1,        //< fault
@@ -34,8 +37,8 @@ typedef union
             r2:2;       //< r
 
     } bit;
-    uint32_t all;
-} SERVO_CTRL_UNION;
+    uint16_t all;
+} SERVO_STATUS_UNION;
 
 
 enum{
@@ -96,14 +99,15 @@ static ec_pdo_entry_info_t servo_pdo_entries_input[] = {
     {S_ADDR_Status_Word, 0x00, 16}, // 状态字
     {S_ADDR_Position_Actual_Value_Abs, 0x00, 32}, // 实际位置
     {S_ADDR_Velocity_Actual_Value, 0x00, 32}, // 实际速度
-    {S_ADDR_Torque_Actual_Value, 0x00, 16}, // 实际转矩
+//    {S_ADDR_Torque_Actual_Value, 0x00, 16}, // 实际转矩
     {S_ADDR_Error_Code, 0x00, 16},
     {S_ADDR_Mode_Of_Operation_Display, 0x00, 8}, //
+
 };
 
 PACKED_BEGIN
 typedef struct PACKED{
-    uint16 ControlStatus:16;
+    SERVO_CTRL_UNION ControlStatus;
     int32_t TargetPos;
     uint16 ControlMode:8;
     uint16 HomingMode:8;
@@ -112,11 +116,11 @@ PACKED_END
 
 PACKED_BEGIN
 typedef struct PACKED{
-    SERVO_CTRL_UNION CurrentStatus ;
+    SERVO_STATUS_UNION CurrentStatus ;
     int32_t CurrentPos ;
     int32_t CurrentVelocity;
-    int16_t CurrentTorque:16;
-    uint16 ErrorCode ;
+//    int16_t CurrentTorque;
+    uint16 ErrorCode;
     uint16 CurrentMode:8;
 }SERVO_SINGLE_INPUT;
 PACKED_END
@@ -143,6 +147,42 @@ static void single_setup_config(ec_slavet* slave){
 static void single_cycle_run(ec_slavet* slave,AxisMotion* axis,int sub_id){
     SERVO_SINGLE_OUTPUT* output = (SERVO_SINGLE_OUTPUT*)slave->outputs;
     SERVO_SINGLE_INPUT* input = (SERVO_SINGLE_INPUT*)slave->inputs;
+    if(sub_id == 0){
+        if(input->CurrentStatus.bit.rtso && input->CurrentStatus.bit.so &&input->CurrentStatus.bit.oe){
+            //< 使能
+            output->TargetPos += axis->GetAxisMotionSpeed();
+        }
+        else{
+            output->TargetPos = input->CurrentPos;
+            axis->SetAxisStop(true);
+        }
+        int controlW = 6;
+        if(axis->GetAxisServoOn()){
+            int readStatus  = input->CurrentStatus.all &0x03;
+
+            switch (readStatus) {
+            case 0x00:
+                controlW = 0x6;
+            case 0x1:
+                controlW = 0x7;
+                break;
+            case 0x3:
+                controlW = 0xF;
+                break;
+            default:
+                break;
+            }
+        }
+        else{
+            controlW = 0;
+        }
+        if(input->CurrentStatus.bit.f){
+            controlW = 0x80;
+        }
+        output->ControlStatus.all = controlW;
+        output->ControlMode = 8;        //< CSP模式
+    }
+
 
 }
 
@@ -193,7 +233,7 @@ static int single_pdo_config_setup(uint16 slave)
 
 void single_clear_alarm(ec_slavet* slave,int axis_id){
     SERVO_SINGLE_OUTPUT* output = (SERVO_SINGLE_OUTPUT*)slave->outputs;
-
+    output->ControlStatus.bit.fr = 1;
 }
 
 void single_servo_on(ec_slavet* slave,int axis_id,bool state){
@@ -203,8 +243,17 @@ void single_servo_on(ec_slavet* slave,int axis_id,bool state){
 
 int single_get_servo_alarm(ec_slavet* slave,int axis_id){
     SERVO_SINGLE_INPUT* input = (SERVO_SINGLE_INPUT*)slave->inputs;
-
-    return input->ErrorCode;
+    if(input->CurrentStatus.bit.f){
+        if(input->ErrorCode){
+            return input->ErrorCode;
+        }
+        else{
+            return 1000;
+        }
+    }
+    else{
+        return 0;
+    }
 }
 
 int single_get_servo_pos (ec_slavet* slave,int axis_id){
@@ -226,13 +275,15 @@ int single_get_servo_cmd_pos(ec_slavet* slave,int axis_id){
 
 float single_ggget_servo_torque(ec_slavet* slave,int axis_id){
     float torque = 0.0;
-
+    SERVO_SINGLE_INPUT* input = (SERVO_SINGLE_INPUT*)slave->inputs;
+//    torque = input->CurrentTorque;
     return torque;
 }
 
 float single_ggget_servo_velocity(ec_slavet* slave,int axis_id){
     float velocity = 0.0;
-
+    SERVO_SINGLE_INPUT* input = (SERVO_SINGLE_INPUT*)slave->inputs;
+    velocity = input->CurrentVelocity;
     return velocity;
 }
 

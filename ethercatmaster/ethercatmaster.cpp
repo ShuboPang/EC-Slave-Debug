@@ -9,6 +9,7 @@
 #include <QApplication>
 #include <QCoreApplication>
 #include <chrono>
+#include <QDir>
 
 #include "ethercatservobase.h"
 
@@ -259,7 +260,6 @@ qint32 EthercatMaster::init(quint32 network_id){
             qDebug("Request operational state for all slaves\n");
             expectedWKC = (ec_group[0].outputsWKC * 2) + ec_group[0].inputsWKC;
             qDebug("Calculated workcounter %d\n", expectedWKC);
-
             ec_slave[0].state = EC_STATE_OPERATIONAL;
             /* send one valid process data to make outputs in slaves happy*/
             ec_send_processdata();
@@ -524,15 +524,72 @@ QString EthercatMaster::readSII(quint32 slave_id){
 }
 
 
+bool EthercatMaster::copyFileToPath(QString sourceDir ,QString toDir, bool coverFileIfExist)
+{
+    toDir.replace("\\","/");
+    if (sourceDir == toDir){
+        return true;
+    }
+    if (!QFile::exists(sourceDir)){
+        return false;
+    }
+    QDir *createfile     = new QDir;
+    bool exist = createfile->exists(toDir);
+    if (exist){
+        if(coverFileIfExist){
+            createfile->remove(toDir);
+        }
+    }//end if
 
-qint32 EthercatMaster::updateSlaveFirm(quint32 slave_id,const QString path){
+    if(!QFile::copy(sourceDir, toDir))
+    {
+        return false;
+    }
+    return true;
+}
+
+QString EthercatMaster::unTarBfeFile(const QString& path){
+    QString str = path;
+    if(str.startsWith("file:")){
+        str = str.mid(8);
+    }
+    if(!str.endsWith(".tar.bfe")){
+        return str;
+    }
+    QDir dir;
+    dir.rmdir(".tmp");
+    dir.mkdir(".tmp");
+    dir.cd(".tmp");
+    QFileInfo sourceFile(str);
+    copyFileToPath(str,dir.absolutePath()+"/"+sourceFile.fileName(),true);
+
+    /// 解压文件
+    QFileInfo file("./tool/HCbcrypt.bat");
+    QString switchToolPath = "cd "+file.absolutePath().toLocal8Bit() +" & ";
+    QString cmd= switchToolPath+"HCbcrypt.bat "+dir.absolutePath()+"/"+sourceFile.fileName();
+    qDebug()<<"cmd "<<cmd;
+    system(cmd.toLocal8Bit());
+
+    // 解压tar包
+    QString tarFileName = sourceFile.fileName();
+    tarFileName.chop(4);
+    QString tarTargetFileName = tarFileName;
+    tarTargetFileName.chop(4);
+    cmd= switchToolPath+"tar.exe -xf "+dir.absolutePath()+"/"+tarFileName +" -C "+dir.absolutePath()+"/"+tarTargetFileName;
+    qDebug()<<"cmd "<<cmd;
+    system(cmd.toLocal8Bit());
+
+    return str;
+}
+
+
+qint32 EthercatMaster::updateSlaveFirm(quint32 slave_id,const QString& path){
     ++slave_id;
     int offset = 0;
     int buffSize = 2048;
 
 
     QString str = path;
-    str = str.mid(8);
     QFile file(str);
     QByteArray byte_array;
     if(file.open(QFile::ReadOnly)){
@@ -665,14 +722,19 @@ qint32 EthercatMaster::getServoAlarm(quint32 slave_id,quint32 sub_id){
 }
 
 void EthercatMaster::servoOn(quint32 slave_id,quint32 sub_id,bool state){
-     ++slave_id;
-    ec_slavet* slave = &ec_slave[slave_id];
-    if(ethercat_servo_map.contains(slave_id)){
-        const _EthercatSlaveConfig* slave_config = ethercat_servo_map.value(slave_id);
-        if(slave_config!=NULL){
-            slave_config->servo_on(slave,sub_id,state);
-        }
+//     ++slave_id;
+//    ec_slavet* slave = &ec_slave[slave_id];
+//    if(ethercat_servo_map.contains(slave_id)){
+//        const _EthercatSlaveConfig* slave_config = ethercat_servo_map.value(slave_id);
+//        if(slave_config!=NULL){
+//            slave_config->servo_on(slave,sub_id,state);
+//        }
+//    }
+    AxisMotion*  axis = getMotionAxis(slave_id,sub_id);
+    if(axis == NULL){
+        return;
     }
+    axis->SetAxisServoOn(state);
 }
 
 

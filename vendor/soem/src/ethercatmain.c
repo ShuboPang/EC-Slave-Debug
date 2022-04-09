@@ -979,12 +979,12 @@ int ec_writealias2(int slave, int alias){
         {
             printf("Alias %4.4X written successfully to slave %d\n", alias, slave);
         }
-                  else
+        else
         {
             printf("Alias not written\n");
         }
     }
-               else
+    else
     {
         printf("Could not read slave EEPROM");
     }

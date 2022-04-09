@@ -140,16 +140,24 @@ static void szhc_cycle_run(ec_slavet* slave,AxisMotion* axis,int sub_id){
     output->axis_2_MaxTorqueLimit = 300;
     output->axis_1_ControlStatus.bit.pos_num = 1;
     output->axis_2_ControlStatus.bit.pos_num = 1;
+
+    if(sub_id == 0){
+        output->axis_1_ControlStatus.bit.servo_on = axis->GetAxisServoOn();
+    }
+    else if(sub_id == 1){
+        output->axis_2_ControlStatus.bit.servo_on = axis->GetAxisServoOn();
+    }
+
     if(input->axis_1_Current_Status.bit.act){
         if(sub_id == 0){
             if(axis->GetAxisMotionState() == AxisMotion::Axis_Motion_Type_Jog){
                 output->axis_1_TargetPos2 += axis->GetAxisMotionSpeed();
             }
         }
-
     }
     else{
         output->axis_1_TargetPos2 = input->axis_1_Current_Pos;
+        axis->SetAxisStop();
     }
     if(input->axis_2_Current_Status.bit.act){
         if(sub_id == 1){
@@ -160,6 +168,7 @@ static void szhc_cycle_run(ec_slavet* slave,AxisMotion* axis,int sub_id){
     }
     else{
         output->axis_2_TargetPos2 = input->axis_2_Current_Pos;
+        axis->SetAxisStop();
     }
 }
 

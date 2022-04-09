@@ -64,7 +64,18 @@ void AxisMotion::SetAxisMotionJog(int32_t speed){
     this->speed = 0;
 }
 
-void AxisMotion::SetAxisStop(){
+void AxisMotion::SetAxisStop(bool quick){
     target_speed = 0;
+    if(quick){
+        speed = 0;
+    }
 //    state = Axis_Motion_Type_Null;
+}
+
+void AxisMotion::SetAxisServoOn(bool state){
+    servo_on_state = state;
+}
+
+bool AxisMotion::GetAxisServoOn(){
+    return servo_on_state;
 }

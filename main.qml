@@ -12,7 +12,7 @@ ApplicationWindow {
     width: 1280
     height:768
     visible: true
-    title: qsTr("EC-Slave-Debug")+"-"+"1.0.1"
+    title: qsTr("EC-Slave-Debug")+"-"+"1.0.2"
     menuBar: MenuBar{
             Menu {
                  title: qsTr("&伺服参数")
@@ -194,7 +194,13 @@ ApplicationWindow {
                                                               "unit":slave_sdo[i].unit,"describe":slave_sdo[i].describe,"type":slave_sdo[i].type
                                                               });
                     }
-
+                    if(slave_.axis_num == 2){
+                        axis_2_control_page.visible = true
+                    }
+                    else{
+                        axis_2_control_page.visible = false
+                    }
+                    axis_1_control_velocity_unit.text = slave_.velocity_unit
                 }
 
             }
@@ -220,6 +226,11 @@ ApplicationWindow {
                         slaveObjectDictionaryListModel.setProperty(i,"value",value);
                     }
 
+                }
+                else if(slaveOptionHeader.currentIndex == 5){
+                    var slaveinfo = slaveDeviceListModel.get(slaveSel.currentIndex)
+                    slaveAllInfo.text = JSON.stringify(slaveinfo,null,2);
+                    slaveSiiInfo.text = ethercatmaster.readSII(slaveSel.currentIndex)
                 }
             }
         }
@@ -910,7 +921,8 @@ ApplicationWindow {
                                 id: servo1_velocity
                             }
                             Text {
-                                text: qsTr("Rpm/min")
+                                id:axis_1_control_velocity_unit
+//                                text: qsTr("Rpm/min")
                             }
                         }
 
@@ -952,7 +964,6 @@ ApplicationWindow {
                                 MouseArea{
                                     anchors.fill: parent
                                     onClicked: {
-                                        ethercatmaster.setAxisStop(slaveSel.currentIndex,0)
                                         ethercatmaster.servoOn(slaveSel.currentIndex,0,!ethercatmaster.getServoOn(slaveSel.currentIndex,0));
                                     }
                                 }
@@ -1018,14 +1029,12 @@ ApplicationWindow {
                             Button{
                                 text: qsTr("使能")
                                 onClicked: {
-                                    ethercatmaster.setAxisStop(slaveSel.currentIndex,0)
                                     ethercatmaster.servoOn(slaveSel.currentIndex,0,true);
                                 }
                             }
                             Button{
                                 text: qsTr("失能")
                                 onClicked: {
-                                    ethercatmaster.setAxisStop(slaveSel.currentIndex,0)
                                     ethercatmaster.servoOn(slaveSel.currentIndex,0,false);
                                 }
                             }
@@ -1051,7 +1060,16 @@ ApplicationWindow {
                             let slave_info = slaveDeviceListModel.get(slaveSel.currentIndex);
                             let slave = EthercatInfoJs.ethercatSlaveDeviceFind(slave_info.eep_man,slave_info.eep_id)
                             if(alarm_num){
-                                servo1_alarm.text  = alarm_num+":"+slave.alarm_list[alarm_num]
+                                servo1_alarm.text  = alarm_num
+                                try{
+                                    if(slave.hasOwnProperty("alarm_list")){
+                                        servo1_alarm.text +=":"+slave.alarm_list[alarm_num]
+                                    }
+                                }
+                                catch(err){
+
+                                }
+
                             }
                             else{
                                 servo1_alarm.text = qsTr("无")
@@ -1065,6 +1083,7 @@ ApplicationWindow {
                     }
                 }
                 Rectangle{
+                    id:axis_2_control_page
                     width: parent.parent.width / 2
                     height: parent.parent.height
                     border.width: 1
@@ -1110,7 +1129,7 @@ ApplicationWindow {
                                 id: servo2_velocity
                             }
                             Text {
-                                text: qsTr("Rpm/min")
+                                text: axis_1_control_velocity_unit.text
                             }
                         }
 
@@ -1152,7 +1171,6 @@ ApplicationWindow {
                                 MouseArea{
                                     anchors.fill: parent
                                     onClicked: {
-                                        ethercatmaster.setAxisStop(slaveSel.currentIndex,1)
                                         ethercatmaster.servoOn(slaveSel.currentIndex,1,!ethercatmaster.getServoOn(slaveSel.currentIndex,1));
                                     }
                                 }
@@ -1218,14 +1236,12 @@ ApplicationWindow {
                             Button{
                                 text: qsTr("使能")
                                 onClicked: {
-                                    ethercatmaster.setAxisStop(slaveSel.currentIndex,1)
                                     ethercatmaster.servoOn(slaveSel.currentIndex,1,true);
                                 }
                             }
                             Button{
                                 text: qsTr("失能")
                                 onClicked: {
-                                    ethercatmaster.setAxisStop(slaveSel.currentIndex,1)
                                     ethercatmaster.servoOn(slaveSel.currentIndex,1,false);
                                 }
                             }
@@ -1251,7 +1267,16 @@ ApplicationWindow {
                             let slave_info = slaveDeviceListModel.get(slaveSel.currentIndex);
                             let slave = EthercatInfoJs.ethercatSlaveDeviceFind(slave_info.eep_man,slave_info.eep_id)
                             if(alarm_num){
-                                servo2_alarm.text  = alarm_num+":"+slave.alarm_list[alarm_num]
+                                servo2_alarm.text  = alarm_num
+                                try{
+                                    if(slave.hasOwnProperty("alarm_list")){
+                                        servo2_alarm.text +=":"+slave.alarm_list[alarm_num]
+                                    }
+                                }
+                                catch(err){
+
+                                }
+
                             }
                             else{
                                 servo2_alarm.text = qsTr("无")
@@ -1330,7 +1355,7 @@ ApplicationWindow {
     FileDialog{
         id: openFileDialog
         title: qsTr("伺服参数文件位置")
-        nameFilters: [ "ESD files(*.esd)"]
+        nameFilters: [ "ESD files(*.esd)","所有文件(*)"]
         onAccepted: {
             var esd = ethercatmaster.readFile(fileUrl);
             esdfileListModel.clear()
@@ -1350,7 +1375,7 @@ ApplicationWindow {
     FileDialog{
         id: outputFileDialog
         title: qsTr("伺服参数文件保存位置")
-        nameFilters: ["ESD files(*.esd)"]
+        nameFilters: ["ESD files(*.esd)","所有文件(*)"]
         selectMultiple: false
         selectExisting:false
         onAccepted: {
@@ -1373,7 +1398,7 @@ ApplicationWindow {
     FileDialog{
         id: openFileDialog_alias
         title: qsTr("伺服SII文件位置")
-        nameFilters: [ "EII files(*.eii)"]
+        nameFilters: [ "EII files(*.eii)","所有文件(*)"]
 
         onAccepted: {
             siiDeviceListModel.clear()
@@ -1393,7 +1418,7 @@ ApplicationWindow {
     FileDialog{
         id: outputFileDialog_alias
         title: qsTr("伺服SII文件保存位置")
-        nameFilters: ["EII files(*.eii)"]
+        nameFilters: ["EII files(*.eii)","所有文件(*)"]
         selectMultiple: false
         selectExisting:false
         onAccepted: {
@@ -1412,7 +1437,7 @@ ApplicationWindow {
     FileDialog{
         id: openFileDialog_firmware
         title: qsTr("伺服升级文件位置")
-        nameFilters: [ "BIN files(*.bin)"]
+        nameFilters: ["更新包(*.tar.bfe)","固件文件(*.bin)","所有文件(*)"]
 
         onAccepted: {
             firmwareFilePath.text = fileUrl
@@ -1554,10 +1579,11 @@ ApplicationWindow {
 //                        return;
 //                    }
                     firmwareSlaveTimer.start()
+                    var binPath = ethercatmaster.unTarBfeFile(firmwareFilePath.text)
                     for(var i = 0;i<firmwareSlaveListModel.count;i++){
                         if(firmwareSlaveListModel.get(i).isUpdate){
                             firmwareSlaveTimer.currentSlave = i;
-                            ethercatmaster.updateSlaveFirm(i,firmwareFilePath.text)
+                            ethercatmaster.updateSlaveFirm(i,binPath)
                             firmwareSlaveListModel.setProperty(i,"updateState",100)
                         }
                     }

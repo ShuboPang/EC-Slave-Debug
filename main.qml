@@ -132,6 +132,7 @@ ApplicationWindow {
             text: qsTr("初始化")
             enabled:networkList.enabled
             onClicked: {
+                slaveSel.currentIndex = -1
                 if(networkList.currentIndex == -1){
                     return;
                 }

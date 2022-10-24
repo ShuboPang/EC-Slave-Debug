@@ -327,11 +327,12 @@ var __EthercatSlave_huacheng402={
     "sdo":huacheng_sdo,
     "alarm_list":huacheng_alarm,
     "axis_num":2,
-    "velocity_unit":"Rpm/min"
-//    "alarm_addr":{
-//        "main_index":0,
-//        "sub_index":0,
-//    },
+    "velocity_unit":"Rpm/min",
+    "alarm_addr":{
+        "main_index":0x603f,
+        "sub_index":0,
+        "type":2
+    },
 //    "eeprom_addr":{
 //        "main_index":0,
 //        "sub_index":0,

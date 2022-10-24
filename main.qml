@@ -157,6 +157,9 @@ ApplicationWindow {
                 siiSlaveSel.model = ethercatmaster.getSlaveNameList();
                 firmwareSlaveSel.model = siiSlaveSel.model
                 console.log("ethermaster.getSlaveNameList()",ethercatmaster.getSlaveNameList())
+                if(ethercatmaster.getSlaveCount()){
+                    slaveSel.currentIndex = 0
+                }
 //                networkList.enabled = false;
             }
         }

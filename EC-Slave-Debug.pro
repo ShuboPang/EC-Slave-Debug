@@ -11,7 +11,6 @@ RC_ICONS ="image/a94yr-ptzij-001.ico"
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 
-
 DEFINES+=EC_VER1
 DEFINES+=__STDC_LIMIT_MACROS
 DEFINES+=EC_DEBUG

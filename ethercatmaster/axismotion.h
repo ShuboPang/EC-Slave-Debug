@@ -38,6 +38,7 @@ public:
     int32_t timer;
 
     bool servo_on_state;
+    bool clear_alarm;
 };
 
 #endif // AXISMOTION_H

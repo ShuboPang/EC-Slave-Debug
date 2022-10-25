@@ -3,6 +3,8 @@
 AxisMotion::AxisMotion()
 {
     state = Axis_Motion_Type_Null;
+    clear_alarm= false;
+    servo_on_state = false;
 }
 
 void AxisMotion::CycleRun(){

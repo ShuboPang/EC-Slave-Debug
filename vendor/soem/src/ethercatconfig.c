@@ -1027,10 +1027,10 @@ int ecx_config_map_group(ecx_contextt *context, void *pIOmap, uint8 group)
                         (uint8 *)(pIOmap) + etohl(context->slavelist[slave].FMMU[FMMUc].LogStart);
                      context->slavelist[slave].Ostartbit = 
                         context->slavelist[slave].FMMU[FMMUc].LogStartbit;
-                     EC_PRINT("    slave %d Outputs %p startbit %d\n", 
+                     EC_PRINT("    slave %d Outputs %p startbit %d length = %d\n",
                         slave, 
                         context->slavelist[slave].outputs, 
-                        context->slavelist[slave].Ostartbit);
+                        context->slavelist[slave].Ostartbit,context->slavelist[slave].FMMU[FMMUc].LogLength);
                   }
                   FMMUc++;
                }   
@@ -1192,9 +1192,9 @@ int ecx_config_map_group(ecx_contextt *context, void *pIOmap, uint8 group)
                         (uint8 *)(pIOmap) + etohl(context->slavelist[slave].FMMU[FMMUc].LogStart);
                      context->slavelist[slave].Istartbit = 
                         context->slavelist[slave].FMMU[FMMUc].LogStartbit;
-                     EC_PRINT("    Inputs %p startbit %d\n", 
+                     EC_PRINT("    Inputs %p startbit %d length = %d\n",
                         context->slavelist[slave].inputs, 
-                        context->slavelist[slave].Istartbit);
+                        context->slavelist[slave].Istartbit,context->slavelist[slave].FMMU[FMMUc].LogLength);
                   }
                   FMMUc++;
                }   

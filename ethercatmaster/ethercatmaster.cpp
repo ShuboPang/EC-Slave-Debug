@@ -222,6 +222,9 @@ qint32 EthercatMaster::init(quint32 network_id){
                     if(ethercatservo_single.is_surport(&(ec_slave[slc]))){
                         ethercat_servo_map.insert(slc,&ethercatservo_single);
                     }
+                    if(ethercatservo_szhc402.is_surport(&(ec_slave[slc]))){
+                        ethercat_servo_map.insert(slc,&ethercatservo_szhc402);
+                    }
 
                     // 根据从站类型配置pdo
                     if(ethercat_servo_map.contains(slc)){
@@ -707,6 +710,11 @@ void EthercatMaster::clearServoAlarm(quint32 slave_id,quint32 sub_id){
             slave_config->clear_alarm(slave,sub_id);
         }
     }
+    AxisMotion*  axis = getMotionAxis(slave_id-1,sub_id);
+    if(axis == NULL){
+        return;
+    }
+    axis->clear_alarm = true;
 }
 
 qint32 EthercatMaster::getServoAlarm(quint32 slave_id,quint32 sub_id){

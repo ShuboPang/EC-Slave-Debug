@@ -12,7 +12,7 @@ ApplicationWindow {
     width: 1280
     height:768
     visible: true
-    title: qsTr("EC-Slave-Debug")+"-"+"1.0.2"
+    title: qsTr("EC-Slave-Debug")+"-"+"1.0.3"+"-"+"20221025001"
     menuBar: MenuBar{
             Menu {
                  title: qsTr("&伺服参数")
@@ -870,6 +870,25 @@ ApplicationWindow {
 
                 ScrollBar.vertical:ScrollBar{
 
+                }
+                Keys.onPressed: {
+                    if (event.key == Qt.Key_Up) {
+                        if(slaveObjectDictionaryList.currentIndex > 0)
+                            slaveObjectDictionaryList.currentIndex--;
+                    }
+                    else if (event.key == Qt.Key_Down) {
+                        if(slaveObjectDictionaryList.currentIndex < slaveObjectDictionaryListModel.count)
+                            slaveObjectDictionaryList.currentIndex++;
+                    }
+                    event.accepted = true;
+                }
+                onVisibleChanged: {
+                    if(visible){
+                        focus = true;
+                    }
+                    else{
+                        focus = false;
+                    }
                 }
             }
         }

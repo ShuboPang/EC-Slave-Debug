@@ -12,7 +12,7 @@ ApplicationWindow {
     width: 1280
     height:768
     visible: true
-    title: qsTr("EC-Slave-Debug")+"-"+"1.0.3"+"-"+"20221025002"
+    title: qsTr("EC-Slave-Debug")+"-"+"1.0.4"+"-"+"20221026001"
     menuBar: MenuBar{
             Menu {
                  title: qsTr("&伺服参数")
@@ -1603,6 +1603,12 @@ ApplicationWindow {
 //                    }
                     firmwareSlaveTimer.start()
                     var binPath = ethercatmaster.unTarBfeFile(firmwareFilePath.text)
+                    console.log("bin Path",binPath);
+                    if(binPath == ""){
+                        dialog.waring(qsTr("伺服升级"),qsTr("伺服升级失败！ 未找到升级文件"))
+                        firmwareSlaveTimer.stop()
+                        return;
+                    }
                     for(var i = 0;i<firmwareSlaveListModel.count;i++){
                         if(firmwareSlaveListModel.get(i).isUpdate){
                             firmwareSlaveTimer.currentSlave = i;

@@ -551,6 +551,24 @@ bool EthercatMaster::copyFileToPath(QString sourceDir ,QString toDir, bool cover
     return true;
 }
 
+bool DeleteFileOrFolder(const QString &strPath)//要删除的文件夹或文件的路径
+{
+    if (strPath.isEmpty() || !QDir().exists(strPath))//是否传入了空的路径||路径是否存在
+        return false;
+
+    QFileInfo FileInfo(strPath);
+
+    if (FileInfo.isFile())//如果是文件
+        QFile::remove(strPath);
+    else if (FileInfo.isDir())//如果是文件夹
+    {
+        QDir qDir(strPath);
+        qDir.removeRecursively();
+    }
+    return true;
+}
+
+
 QString EthercatMaster::unTarBfeFile(const QString& path){
     QString str = path;
     if(str.startsWith("file:")){
@@ -560,29 +578,27 @@ QString EthercatMaster::unTarBfeFile(const QString& path){
         return str;
     }
     QDir dir;
-    dir.rmdir(".tmp");
-    dir.mkdir(".tmp");
-    dir.cd(".tmp");
+    dir.cd("tool");
     QFileInfo sourceFile(str);
     copyFileToPath(str,dir.absolutePath()+"/"+sourceFile.fileName(),true);
 
+    QString file_name = sourceFile.fileName();
+    file_name.chop(8);
     /// 解压文件
     QFileInfo file("./tool/HCbcrypt.bat");
     QString switchToolPath = "cd "+file.absolutePath().toLocal8Bit() +" & ";
-    QString cmd= switchToolPath+"HCbcrypt.bat "+dir.absolutePath()+"/"+sourceFile.fileName();
-    qDebug()<<"cmd "<<cmd;
+    QString cmd= switchToolPath+"HCbcrypt.bat "+file_name;
+    qDebug()<<"cmd111: "<<cmd;
     system(cmd.toLocal8Bit());
 
-    // 解压tar包
-    QString tarFileName = sourceFile.fileName();
-    tarFileName.chop(4);
-    QString tarTargetFileName = tarFileName;
-    tarTargetFileName.chop(4);
-    cmd= switchToolPath+"tar.exe -xf "+dir.absolutePath()+"/"+tarFileName +" -C "+dir.absolutePath()+"/"+tarTargetFileName;
-    qDebug()<<"cmd "<<cmd;
-    system(cmd.toLocal8Bit());
-
-    return str;
+    QDir temp(".tmp");
+    QStringList list = temp.entryList(QDir::NoDotAndDotDot| QDir::AllEntries);
+    qDebug()<<"list"<<temp.absolutePath()<<list;
+    if(list.size() > 0){
+        QFileInfo hex_file(".tmp/"+list[0]);
+        return hex_file.absoluteFilePath();
+    }
+    return "";
 }
 
 

@@ -127,6 +127,10 @@ public:
 
     Q_INVOKABLE qint32 updateSlaveFirm(quint32 slave_id, const QString& path);
 
+    Q_INVOKABLE QString getVersion(){
+        return SW_VER;
+    }
+
 private:
     AxisMotion* getMotionAxis(quint32 slave_id,quint32 sub_id);
 

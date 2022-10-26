@@ -4,6 +4,10 @@ QT += core
 
 CONFIG += c++11
 
+SOTF_VERSION=EC-Slave-Debug-1.0.4-20221026002
+VERSTR = '\\"$${SOTF_VERSION}\\"'
+DEFINES += SW_VER=\"$${VERSTR}\"
+
 RC_ICONS ="image/a94yr-ptzij-001.ico"
 
 # You can make your code fail to compile if it uses deprecated APIs.
@@ -48,3 +52,5 @@ QML_DESIGNER_IMPORT_PATH =
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+win32:QMAKE_POST_LINK += " pack.bat $${suffix} $${SOTF_VERSION}"

@@ -12,7 +12,7 @@ ApplicationWindow {
     width: 1280
     height:768
     visible: true
-    title: qsTr("EC-Slave-Debug")+"-"+"1.0.4"+"-"+"20221026001"
+    title: ethercatmaster.getVersion()
     menuBar: MenuBar{
             Menu {
                  title: qsTr("&伺服参数")

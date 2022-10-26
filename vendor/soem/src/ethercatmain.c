@@ -967,6 +967,11 @@ int eeprom_write(int slave, int start, int length)
     return 0;
 }
 
+int write_sii_info(int slave,uint8* buff,int length){
+    memcpy(ebuf,buff,length);
+    return eeprom_write(slave,0,length);
+}
+
 
 int ec_writealias2(int slave, int alias){
 
@@ -988,6 +993,7 @@ int ec_writealias2(int slave, int alias){
     {
         printf("Could not read slave EEPROM");
     }
+    return 0;
 }
 
 int ec_read_sii_infomation(int slave,char* out){

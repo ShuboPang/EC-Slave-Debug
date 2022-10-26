@@ -842,6 +842,23 @@ AxisMotion* EthercatMaster::getMotionAxis(quint32 slave_id,quint32 sub_id){
     return NULL;
 }
 
+qint32 EthercatMaster::writeSii(int slave,const QString &bin_file)
+{
+    QFile file(bin_file);
+    QByteArray byte_array;
+    if(file.open(QFile::ReadOnly)){
+        byte_array = file.readAll();
+    }
+    else{
+        qDebug()<<bin_file<<"readFile open failed";
+        return -1;
+    }
+    write_sii_info(slave+1,(uint8*)byte_array.data(),byte_array.size());
+    qDebug()<<"sii:"<<byte_array;
+    file.close();
+    return 0;
+}
+
 
 qint32 EthercatMaster::setAxisJog(quint32 slave_id,quint32 sub_id,qint32 speed){
     AxisMotion*  axis = getMotionAxis(slave_id,sub_id);

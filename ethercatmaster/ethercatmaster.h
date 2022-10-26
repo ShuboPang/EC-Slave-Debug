@@ -137,8 +137,12 @@ public:
         return SW_VER;
     }
 
+    Q_INVOKABLE qint32 writeSii(int slave,const QString& bin_file);
+
 private:
     AxisMotion* getMotionAxis(quint32 slave_id,quint32 sub_id);
+
+
 
 private:
     boolean printSDO = FALSE;

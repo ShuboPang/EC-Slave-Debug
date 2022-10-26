@@ -1421,9 +1421,15 @@ ApplicationWindow {
     FileDialog{
         id: openFileDialog_alias
         title: qsTr("伺服SII文件位置")
-        nameFilters: [ "EII files(*.eii)","所有文件(*)"]
+        nameFilters: [ "EII files(*.eii)","固件文件(*.bin)","所有文件(*)"]
 
         onAccepted: {
+            if(1){
+                firmwareFilePath.text = fileUrl
+                firmwarePage.visible = true
+                firmwarePage.update_type = 1;
+                return;
+            }
             siiDeviceListModel.clear()
             siiPage.title = qsTr("SII ")+fileUrl
             var esi = ethercatmaster.readFile(fileUrl);
@@ -1465,6 +1471,7 @@ ApplicationWindow {
         onAccepted: {
             firmwareFilePath.text = fileUrl
             firmwarePage.visible = true
+            firmwarePage.update_type = 0;
         }
     }
 
@@ -1473,6 +1480,8 @@ ApplicationWindow {
         width: 800
         height: 600
         visible: false;
+
+        property int update_type: 0
         Column{
             spacing: 10
             x:10
@@ -1596,7 +1605,8 @@ ApplicationWindow {
                 }
             }
             Button{
-                text:qsTr("开始升级")
+                text:qsTr("开始升级固件")
+                visible: firmwarePage.update_type==0
                 onClicked: {
 //                    if(firmwareSlaveSel.currentIndex == -1){
 //                        return;
@@ -1618,6 +1628,26 @@ ApplicationWindow {
                     }
                     dialog.waring(qsTr("伺服升级"),qsTr("伺服升级完成"))
                     firmwareSlaveTimer.stop()
+                }
+            }
+            Button{
+                text:qsTr("开始升级SII")
+                visible: firmwarePage.update_type==1
+                onClicked: {
+                    var binPath = ethercatmaster.unTarBfeFile(firmwareFilePath.text)
+                    console.log("bin Path",binPath);
+                    if(binPath == ""){
+                        dialog.waring(qsTr("SII升级"),qsTr("SII升级失败！ 未找到升级文件"))
+                        return;
+                    }
+                    for(var i = 0;i<firmwareSlaveListModel.count;i++){
+                        if(firmwareSlaveListModel.get(i).isUpdate){
+                            firmwareSlaveTimer.currentSlave = i;
+                            ethercatmaster.writeSii(i,binPath)
+                            firmwareSlaveListModel.setProperty(i,"updateState",100)
+                        }
+                    }
+                    dialog.waring(qsTr("伺服升级"),qsTr("伺服升级完成"))
                 }
             }
         }

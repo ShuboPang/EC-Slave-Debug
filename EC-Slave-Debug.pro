@@ -4,7 +4,10 @@ QT += core
 
 CONFIG += c++11
 
-SOTF_VERSION=EC-Slave-Debug-1.0.4-20221026002
+#版本号
+SOTF_VERSION=EC-Slave-Debug-1.0.4-20221026003
+
+
 VERSTR = '\\"$${SOTF_VERSION}\\"'
 DEFINES += SW_VER=\"$${VERSTR}\"
 

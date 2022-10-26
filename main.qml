@@ -107,8 +107,8 @@ ApplicationWindow {
                  Action {
                      text: qsTr("&关于...")
                      onTriggered: {
+                         dialog.waring("关于","深圳市华成工业控制股份有限公司")
                      }
-
                  }
              }
         }

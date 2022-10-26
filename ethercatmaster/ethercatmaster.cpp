@@ -10,6 +10,8 @@
 #include <QCoreApplication>
 #include <chrono>
 #include <QDir>
+#include <QDesktopServices>
+#include <QUrl>
 
 #include "ethercatservobase.h"
 
@@ -151,6 +153,11 @@ QStringList EthercatMaster::scanNetwork(){
     return ScanHardware::ScanNetworkCard();
 }
 
+void EthercatMaster::openUrlFile(QString url){
+    QDir dir;
+    QFileInfo info(url);
+    QDesktopServices::openUrl(QUrl(info.absolutePath()+"/"+info.fileName()));
+}
 
 ///
 /// \brief EthercatMaster::init

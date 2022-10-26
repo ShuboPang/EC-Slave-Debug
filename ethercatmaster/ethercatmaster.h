@@ -28,6 +28,12 @@ public:
     Q_INVOKABLE QStringList scanNetwork();
 
     ///
+    /// \brief openUrlFile     打开网页文件
+    /// \param url
+    ///
+    Q_INVOKABLE void openUrlFile(QString url);
+
+    ///
     /// \brief init             初始化网卡
     /// \param network_id
     /// \return

@@ -262,9 +262,9 @@ static void szhc402_cycle_run(ec_slavet* slave,AxisMotion* axis,int sub_id){
         }
         if(axis->clear_alarm){
             if(readStatus & 8){
-                axis->clear_alarm = false;
                 controlW = 0x80;
             }
+            axis->clear_alarm = false;
 
         }
         output->ControlStatus_2.all = controlW;

@@ -16,8 +16,14 @@ HEADERS += \
     $$PWD/Include/pcap/vlan.h \
     $$PWD/Include/remote-ext.h
 
+contains(QT_ARCH,i386){
+LIBS +=  $$PWD/Lib/Packet.lib
+LIBS +=  $$PWD/Lib/wpcap.lib
+}
 
+contains(QT_ARCH,x86_64){
 LIBS +=  $$PWD/Lib/x64/Packet.lib
 LIBS +=  $$PWD/Lib/x64/wpcap.lib
+}
 
 INCLUDEPATH+=$$PWD/include/

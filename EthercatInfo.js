@@ -327,11 +327,12 @@ var __EthercatSlave_huacheng402={
     "sdo":huacheng_sdo,
     "alarm_list":huacheng_alarm,
     "axis_num":2,
-    "velocity_unit":"Rpm/min"
-//    "alarm_addr":{
-//        "main_index":0,
-//        "sub_index":0,
-//    },
+    "velocity_unit":"Rpm/min",
+    "alarm_addr":{
+        "main_index":0x603f,
+        "sub_index":0,
+        "type":2
+    },
 //    "eeprom_addr":{
 //        "main_index":0,
 //        "sub_index":0,
@@ -344,11 +345,31 @@ var __EthercatSlave_huacheng3000_402={
     "sdo":huacheng_sdo,
     "axis_num":2,
     "alarm_list":huacheng_alarm,
-    "velocity_unit":"Rpm/min"
-//    "alarm_addr":{
+    "velocity_unit":"Rpm/min",
+    "alarm_addr":{
+        "main_index":0x603f,
+        "sub_index":0,
+        "type":2
+    },
+//    "eeprom_addr":{
 //        "main_index":0,
 //        "sub_index":0,
-//    },
+//    }
+}
+
+var __EthercatSlave_huacheng3000_602={
+    "name":"",
+    "eep_man":0x92b,
+    "eep_id":0x602,
+    "sdo":huacheng_sdo,
+    "axis_num":2,
+    "alarm_list":huacheng_alarm,
+    "velocity_unit":"Rpm/min",
+    "alarm_addr":{
+        "main_index":0x603f,
+        "sub_index":0,
+        "type":2
+    },
 //    "eeprom_addr":{
 //        "main_index":0,
 //        "sub_index":0,
@@ -405,6 +426,7 @@ var ethercatSlaveDeviceList =[__EthercatSlave_huacheng,
                               __EthercatSlave_yako2405pe,
                               __EthercatSlave_yako2205pe,
                               __EthercatSlave_huacheng402,
+                              __EthercatSlave_huacheng3000_602,
                               __EthercatSlave_huacheng3000_402,
                             ];
 

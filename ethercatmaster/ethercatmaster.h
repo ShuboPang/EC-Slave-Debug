@@ -28,6 +28,12 @@ public:
     Q_INVOKABLE QStringList scanNetwork();
 
     ///
+    /// \brief openUrlFile     打开网页文件
+    /// \param url
+    ///
+    Q_INVOKABLE void openUrlFile(QString url);
+
+    ///
     /// \brief init             初始化网卡
     /// \param network_id
     /// \return
@@ -127,8 +133,16 @@ public:
 
     Q_INVOKABLE qint32 updateSlaveFirm(quint32 slave_id, const QString& path);
 
+    Q_INVOKABLE QString getVersion(){
+        return SW_VER;
+    }
+
+    Q_INVOKABLE qint32 writeSii(int slave,const QString& bin_file);
+
 private:
     AxisMotion* getMotionAxis(quint32 slave_id,quint32 sub_id);
+
+
 
 private:
     boolean printSDO = FALSE;

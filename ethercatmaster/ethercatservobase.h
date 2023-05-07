@@ -84,4 +84,6 @@ extern const _EthercatSlaveConfig ethercatservo_szhc;
 
 extern const _EthercatSlaveConfig ethercatservo_single;
 
+extern const _EthercatSlaveConfig ethercatservo_szhc402;
+
 #endif // ETHERCATSERVOBASE_H

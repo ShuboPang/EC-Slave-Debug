@@ -10,6 +10,8 @@
 #include <QCoreApplication>
 #include <chrono>
 #include <QDir>
+#include <QDesktopServices>
+#include <QUrl>
 
 #include "ethercatservobase.h"
 
@@ -151,6 +153,11 @@ QStringList EthercatMaster::scanNetwork(){
     return ScanHardware::ScanNetworkCard();
 }
 
+void EthercatMaster::openUrlFile(QString url){
+    QDir dir;
+    QFileInfo info(url);
+    QDesktopServices::openUrl(QUrl(info.absolutePath()+"/"+info.fileName()));
+}
 
 ///
 /// \brief EthercatMaster::init
@@ -221,6 +228,9 @@ qint32 EthercatMaster::init(quint32 network_id){
                     }
                     if(ethercatservo_single.is_surport(&(ec_slave[slc]))){
                         ethercat_servo_map.insert(slc,&ethercatservo_single);
+                    }
+                    if(ethercatservo_szhc402.is_surport(&(ec_slave[slc]))){
+                        ethercat_servo_map.insert(slc,&ethercatservo_szhc402);
                     }
 
                     // 根据从站类型配置pdo
@@ -548,6 +558,24 @@ bool EthercatMaster::copyFileToPath(QString sourceDir ,QString toDir, bool cover
     return true;
 }
 
+bool DeleteFileOrFolder(const QString &strPath)//要删除的文件夹或文件的路径
+{
+    if (strPath.isEmpty() || !QDir().exists(strPath))//是否传入了空的路径||路径是否存在
+        return false;
+
+    QFileInfo FileInfo(strPath);
+
+    if (FileInfo.isFile())//如果是文件
+        QFile::remove(strPath);
+    else if (FileInfo.isDir())//如果是文件夹
+    {
+        QDir qDir(strPath);
+        qDir.removeRecursively();
+    }
+    return true;
+}
+
+
 QString EthercatMaster::unTarBfeFile(const QString& path){
     QString str = path;
     if(str.startsWith("file:")){
@@ -557,29 +585,27 @@ QString EthercatMaster::unTarBfeFile(const QString& path){
         return str;
     }
     QDir dir;
-    dir.rmdir(".tmp");
-    dir.mkdir(".tmp");
-    dir.cd(".tmp");
+    dir.cd("tool");
     QFileInfo sourceFile(str);
     copyFileToPath(str,dir.absolutePath()+"/"+sourceFile.fileName(),true);
 
+    QString file_name = sourceFile.fileName();
+    file_name.chop(8);
     /// 解压文件
     QFileInfo file("./tool/HCbcrypt.bat");
     QString switchToolPath = "cd "+file.absolutePath().toLocal8Bit() +" & ";
-    QString cmd= switchToolPath+"HCbcrypt.bat "+dir.absolutePath()+"/"+sourceFile.fileName();
-    qDebug()<<"cmd "<<cmd;
+    QString cmd= switchToolPath+"HCbcrypt.bat "+file_name;
+    qDebug()<<"cmd111: "<<cmd;
     system(cmd.toLocal8Bit());
 
-    // 解压tar包
-    QString tarFileName = sourceFile.fileName();
-    tarFileName.chop(4);
-    QString tarTargetFileName = tarFileName;
-    tarTargetFileName.chop(4);
-    cmd= switchToolPath+"tar.exe -xf "+dir.absolutePath()+"/"+tarFileName +" -C "+dir.absolutePath()+"/"+tarTargetFileName;
-    qDebug()<<"cmd "<<cmd;
-    system(cmd.toLocal8Bit());
-
-    return str;
+    QDir temp(".tmp");
+    QStringList list = temp.entryList(QDir::NoDotAndDotDot| QDir::AllEntries);
+    qDebug()<<"list"<<temp.absolutePath()<<list;
+    if(list.size() > 0){
+        QFileInfo hex_file(".tmp/"+list[0]);
+        return hex_file.absoluteFilePath();
+    }
+    return "";
 }
 
 
@@ -707,6 +733,11 @@ void EthercatMaster::clearServoAlarm(quint32 slave_id,quint32 sub_id){
             slave_config->clear_alarm(slave,sub_id);
         }
     }
+    AxisMotion*  axis = getMotionAxis(slave_id-1,sub_id);
+    if(axis == NULL){
+        return;
+    }
+    axis->clear_alarm = true;
 }
 
 qint32 EthercatMaster::getServoAlarm(quint32 slave_id,quint32 sub_id){
@@ -809,6 +840,23 @@ AxisMotion* EthercatMaster::getMotionAxis(quint32 slave_id,quint32 sub_id){
         }
     }
     return NULL;
+}
+
+qint32 EthercatMaster::writeSii(int slave,const QString &bin_file)
+{
+    QFile file(bin_file);
+    QByteArray byte_array;
+    if(file.open(QFile::ReadOnly)){
+        byte_array = file.readAll();
+    }
+    else{
+        qDebug()<<bin_file<<"readFile open failed";
+        return -1;
+    }
+    write_sii_info(slave+1,(uint8*)byte_array.data(),byte_array.size());
+    qDebug()<<"sii:"<<byte_array;
+    file.close();
+    return 0;
 }
 
 

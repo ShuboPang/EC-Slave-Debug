@@ -113,7 +113,7 @@ typedef struct{
     int32_t axis_2_Pos_CMD_ERR ;
 }SERVO_SZHC_INPUT;
 
-int szhc_is_surport(ec_slavet* slave){
+static int szhc_is_surport(ec_slavet* slave){
     for(int i = 0;i<sizeof (szhc_servo_support_list)/sizeof(ethercat_dev_id_info_t);i++){
         if(slave->eep_man == szhc_servo_support_list[i].vendor_id && slave->eep_id == szhc_servo_support_list[i].product_id){
             return 1;
@@ -122,7 +122,7 @@ int szhc_is_surport(ec_slavet* slave){
     return 0;
 }
 
-int szhc_axis_num(){
+static int szhc_axis_num(){
     return 2;
 }
 
@@ -294,10 +294,10 @@ float szhc_gget_servo_torque(ec_slavet* slave,int axis_id){
     float torque = 0.0;
     SERVO_SZHC_INPUT* input = (SERVO_SZHC_INPUT*)slave->inputs;
     if(axis_id == 0){
-        torque =  input->axis_1_Current_Torque/15.08;
+        torque =  input->axis_1_Current_Torque/25.08;
     }
     else if(axis_id == 1){
-        torque =  input->axis_2_Current_Torque/15.08;
+        torque =  input->axis_2_Current_Torque/25.08;
     }
     return torque;
 }
